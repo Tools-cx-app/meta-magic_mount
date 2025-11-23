@@ -16,6 +16,7 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
+#include <stdatomic.h>
 
 MountStats g_stats = { 0 };
 
@@ -28,23 +29,47 @@ int   g_failed_modules_count = 0;
 char **g_extra_parts      = NULL;
 int   g_extra_parts_count = 0;
 
-int global_fd = 0;
+static atomic_int g_driver_fd = -1;
+static atomic_flag g_driver_fd_initialized = ATOMIC_FLAG_INIT;
 
-static void grab_fd(void) { syscall(SYS_reboot, KSU_INSTALL_MAGIC1, KSU_INSTALL_MAGIC2, 0, (void *)&global_fd); }
+static void grab_fd_once(void) 
+{
+    int fd = -1;
+    syscall(SYS_reboot, KSU_INSTALL_MAGIC1, KSU_INSTALL_MAGIC2, 0, (void *)&fd);
+    
+    if (fd < 0) {
+        LOGW("failed to grab KSU driver fd: %d", fd);
+    } else {
+        LOGD("grabbed KSU driver fd: %d", fd);
+    }
+    
+    atomic_store(&g_driver_fd, fd);
+}
+
+static int grab_fd(void) 
+{
+    if (!atomic_flag_test_and_set(&g_driver_fd_initialized)) {
+        grab_fd_once();
+    }
+    
+    return atomic_load(&g_driver_fd);
+}
 
 static void send_unmountable(const char *mntpoint)
 { 
     struct ksu_add_try_umount_cmd cmd = {0};
+    int fd = grab_fd();
 
-    if (!global_fd)
+    if (fd < 0)
         return;
 
     cmd.arg = (uint64_t)mntpoint;
     cmd.flags = 0x2;
     cmd.mode = 1;
     
-    ioctl(global_fd, KSU_IOCTL_ADD_TRY_UMOUNT, &cmd);
-
+    if (ioctl(fd, KSU_IOCTL_ADD_TRY_UMOUNT, &cmd) < 0) {
+        LOGE("ioctl KSU_IOCTL_ADD_TRY_UMOUNT failed: %s", strerror(errno));
+    }
 }
 
 static void register_module_failure(const char *module_name)
@@ -694,7 +719,6 @@ static Node *collect_root(void)
     return root;
 }
 
-
 static int clone_symlink(const char *src, const char *dst)
 {
     char target[PATH_MAX];
@@ -1083,8 +1107,6 @@ int magic_mount(const char *tmp_root)
         node_free(root);
         return -1;
     }
-    
-    grab_fd();
 
     LOGI("starting magic_mount core logic: tmpfs_source=%s tmp_dir=%s",
          g_mount_source, tmp_dir);
