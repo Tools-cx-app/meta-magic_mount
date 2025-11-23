@@ -2,6 +2,6 @@ id=meta-mm
 metamodule=1
 name=Magic Mount MetaModule - Rust
 version=v0.2.1
-versionCode=200100
+versionCode=200200
 author=7a72 && Tools-cx-app
 description=An implementation of a metamodule using Magic Mount, Based on MKSU, Template is from meta-overlay
