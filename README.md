@@ -1,4 +1,6 @@
 # Magic Mount Metamodule
+[![Latest Release](https://img.shields.io/github/v/release/7a72/meta-magic_mount?label=Latest%20Release)](https://github.com/7a72/meta-magic_mount/releases/latest)
+[![Latest CI](https://img.shields.io/badge/Latest%20CI-Build-orange)](https://nightly.link/7a72/meta-magic_mount/workflows/compile/main)
 
 Implement systemless modification support for KernelSU.
 
