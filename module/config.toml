@@ -1,4 +1,4 @@
 moduledir = "/data/adb/modules/"
 mountsource = "KSU"
 verbose = false
-partitions = []
+debug = true
