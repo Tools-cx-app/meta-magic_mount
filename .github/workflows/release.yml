@@ -75,7 +75,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           TAG_NAME=${GITHUB_REF##*/}
-          CAPTION="*Release ${TAG_NAME}*"
+          CAPTION="*[Release ${TAG_NAME}](https://magic-mount.zrlab.org/changelog)*"
           RELEASE_FILE=$(find build -maxdepth 1 -type f -name "meta*release.zip")
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
@@ -83,4 +83,3 @@ jobs:
             -F parse_mode="Markdown" \
             -F caption="$CAPTION" \
             -F document=@"${RELEASE_FILE}"
-
