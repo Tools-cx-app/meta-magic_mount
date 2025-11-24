@@ -1,6 +1,6 @@
 {
-  "version": "v0.0.1-g18abca0",
-  "versionCode": 1,
-  "zipUrl": "https://github.com/YuzakiKokuban/meta-hybrid_mount/releases/download/v0.2.2-Hybrid/meta-hybrid-v0.0.1-g18abca0.zip",
+  "version": "v0.2.2-Hybrid-g10badc0",
+  "versionCode": 3,
+  "zipUrl": "https://github.com/YuzakiKokuban/meta-hybrid_mount/releases/download/v0.2.2-Hybrid/meta-hybrid-v0.2.2-Hybrid-g10badc0.zip",
   "changelog": "https://raw.githubusercontent.com/YuzakiKokuban/meta-hybrid_mount/master/changelog.md"
 }
