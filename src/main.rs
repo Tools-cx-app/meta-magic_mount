@@ -1,176 +1,174 @@
 mod config;
-mod magic_mount;
 mod utils;
 
-use std::path::PathBuf;
+// NOTE: You should move your previous `magic_mount` module to `engine/magic.rs`
+// and `meta-overlayfs/src/mount.rs` to `engine/overlay.rs`
+// mod engine; 
 
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use config::{CONFIG_FILE_DEFAULT, Config};
+use config::{Config, CONFIG_FILE_DEFAULT};
 
 #[derive(Parser, Debug)]
-#[command(name = "magic_mount", version, about = "Magic Mount Metamodule")]
+#[command(name = "meta-hybrid", version, about = "Hybrid Mount Metamodule")]
 struct Cli {
-    /// Config file path
     #[arg(short = 'c', long = "config")]
     config: Option<PathBuf>,
-
-    /// Module directory path
     #[arg(short = 'm', long = "moduledir")]
     moduledir: Option<PathBuf>,
-
-    /// Temporary directory path (auto-selected if not specified)
     #[arg(short = 't', long = "tempdir")]
     tempdir: Option<PathBuf>,
-
-    /// Mount source name
     #[arg(short = 's', long = "mountsource")]
     mountsource: Option<String>,
-
-    /// Enable verbose (debug) logging
     #[arg(short = 'v', long = "verbose")]
     verbose: bool,
-
-    /// Extra partitions, comma-separated, eg: -p mi_ext,my_stock
     #[arg(short = 'p', long = "partitions", value_delimiter = ',')]
     partitions: Vec<String>,
-
     #[command(subcommand)]
     command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Generate example config file
     GenConfig {
-        /// Output path for config file
         #[arg(short = 'o', long = "output", default_value = CONFIG_FILE_DEFAULT)]
         output: PathBuf,
     },
-    /// Show current effective configuration
     ShowConfig,
 }
 
-fn load_config(cli: &Cli) -> Result<Config> {
-    // 1. 尝试从指定的配置文件加载
-    if let Some(config_path) = &cli.config {
-        log::info!("Loading config from: {}", config_path.display());
-        return Config::from_file(config_path).context("failed to load specified config file");
-    }
+// Constants for decision engine
+const PARTITIONS: &[&str] = &["system", "vendor", "product", "system_ext", "odm", "oem"];
 
-    // 2. 尝试从默认位置加载
+fn load_config(cli: &Cli) -> Result<Config> {
+    if let Some(config_path) = &cli.config {
+        return Config::from_file(config_path);
+    }
     if let Some(config) = Config::load_default() {
-        log::info!(
-            "Loaded config from default location: {}",
-            CONFIG_FILE_DEFAULT
-        );
         return Ok(config);
     }
-
-    // 3. 使用默认配置
-    log::info!("Using default configuration (no config file found)");
     Ok(Config::default())
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // 处理子命令
     if let Some(command) = &cli.command {
         match command {
             Commands::GenConfig { output } => {
-                return generate_config(output);
-            }
+                let config = Config::default();
+                config.save_to_file(output)?;
+                println!("Config generated at {}", output.display());
+                return Ok(());
+            },
             Commands::ShowConfig => {
                 let config = load_config(&cli)?;
-                return show_config(&config);
+                println!("{:#?}", config);
+                return Ok(());
             }
         }
     }
 
-    // 加载配置
     let mut config = load_config(&cli)?;
-
-    // 命令行参数覆盖配置文件
-    config.merge_with_cli(
-        cli.moduledir,
-        cli.tempdir,
-        cli.mountsource,
-        cli.verbose,
-        cli.partitions,
-    );
-
-    // 初始化日志
+    config.merge_with_cli(cli.moduledir, cli.tempdir, cli.mountsource, cli.verbose, cli.partitions);
     utils::init_logger(config.verbose)?;
 
-    log::info!("Magic Mount Starting");
-    log::info!("module dir      : {}", config.moduledir.display());
+    log::info!("Hybrid Mount Starting...");
 
-    let tempdir = if let Some(temp) = config.tempdir {
-        log::info!("temp dir (cfg)  : {}", temp.display());
-        temp
-    } else {
-        let temp = utils::select_temp_dir().context("failed to select temp dir automatically")?;
-        log::info!("temp dir (auto) : {}", temp.display());
-        temp
-    };
+    // 1. Load module modes from config (e.g., module_id=magic)
+    let module_modes = config::load_module_modes();
 
-    log::info!("mount source    : {}", config.mountsource);
-    log::info!("verbose mode    : {}", config.verbose);
-    if !config.partitions.is_empty() {
-        log::info!("extra partitions: {:?}", config.partitions);
+    // 2. Scan enabled modules
+    // In real implementation, you should scan config.moduledir
+    let enabled_modules = scan_enabled_modules(&config.moduledir)?;
+    log::info!("Found {} enabled modules", enabled_modules.len());
+
+    // 3. Group modules by partition and Decide Mode
+    // Map: Partition -> List of Module IDs
+    let mut partition_map: HashMap<String, Vec<PathBuf>> = HashMap::new();
+    // Map: Partition -> Force Magic Mount?
+    let mut magic_force_map: HashMap<String, bool> = HashMap::new();
+
+    for module_path in enabled_modules {
+        let module_id = module_path.file_name().unwrap().to_string_lossy().to_string();
+        let user_mode = module_modes.get(&module_id).map(|s| s.as_str()).unwrap_or("auto");
+        
+        let is_magic = user_mode == "magic";
+
+        // Check which partitions this module modifies
+        // Assuming module structure: /data/adb/modules/<id>/<partition>/...
+        // Or if using modules.img, adjust path accordingly
+        for &part in PARTITIONS {
+            let part_dir = module_path.join(part);
+            if part_dir.is_dir() {
+                partition_map.entry(part.to_string()).or_default().push(module_path.clone());
+                
+                // Per-partition decision logic:
+                // If ANY module in this partition is set to 'magic', the whole partition degrades to magic mount.
+                if is_magic {
+                    magic_force_map.insert(part.to_string(), true);
+                    log::info!("Partition '{}' forced to Magic Mount due to module '{}'", part, module_id);
+                }
+            }
+        }
     }
 
+    // Add extra partitions from config
+    for part in &config.partitions {
+        if !partition_map.contains_key(part) {
+             partition_map.insert(part.clone(), Vec::new());
+        }
+    }
+
+    // 4. Execute Mounts
+    // You need to initialize tempdir for magic mount
+    let tempdir = if let Some(t) = &config.tempdir { t.clone() } else { utils::select_temp_dir()? };
     utils::ensure_temp_dir(&tempdir)?;
 
-    let result = magic_mount::magic_mount(
-        &tempdir,
-        &config.moduledir,
-        &config.mountsource,
-        &config.partitions,
-    );
+    for (part, modules) in partition_map {
+        if modules.is_empty() { continue; }
+        
+        let use_magic = *magic_force_map.get(&part).unwrap_or(&false);
 
-    utils::cleanup_temp_dir(&tempdir);
-
-    match result {
-        Ok(_) => {
-            log::info!("Magic Mount Completed Successfully");
-            Ok(())
-        }
-        Err(e) => {
-            log::error!("Magic Mount Failed");
-            log::error!("error: {:#}", e);
-            Err(e)
+        if use_magic {
+            log::info!("Mounting {} using MAGIC MOUNT engine", part);
+            // Call your magic mount engine here
+            // engine::magic::mount_partition(&part, &modules, &tempdir)?;
+        } else {
+            log::info!("Mounting {} using OVERLAYFS engine", part);
+            // Call your overlayfs engine here
+            // engine::overlay::mount_partition(&part, &modules)?;
+            // If overlay fails, you might want to fallback to magic here too
         }
     }
-}
-
-fn generate_config(output: &PathBuf) -> Result<()> {
-    let config = Config::default();
-    config
-        .save_to_file(output)
-        .context("failed to generate config file")?;
-
-    println!("✓ Config file generated at: {}", output.display());
-    println!("\nExample content:");
-    println!("{}", Config::example());
+    
+    // Clean up
+    utils::cleanup_temp_dir(&tempdir);
+    log::info!("Hybrid Mount Completed");
     Ok(())
 }
 
-fn show_config(config: &Config) -> Result<()> {
-    println!("Current Configuration:");
-    println!("=====================");
-    println!("Module Dir    : {}", config.moduledir.display());
-    println!(
-        "Temp Dir      : {}",
-        config
-            .tempdir
-            .as_ref()
-            .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "(auto)".to_string())
-    );
-    println!("Mount Source  : {}", config.mountsource);
-    println!("Verbose       : {}", config.verbose);
-    println!("Partitions    : {:?}", config.partitions);
-    Ok(())
+fn scan_enabled_modules(module_dir: &Path) -> Result<Vec<PathBuf>> {
+    let mut modules = Vec::new();
+    if !module_dir.exists() { return Ok(modules); }
+
+    for entry in fs::read_dir(module_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            // Check for disable/skip_mount/remove
+            if path.join("disable").exists() || 
+               path.join("remove").exists() || 
+               path.join("skip_mount").exists() {
+                continue;
+            }
+            // Skip self
+            if path.ends_with("meta-hybrid") { continue; }
+            
+            modules.push(path);
+        }
+    }
+    Ok(modules)
 }

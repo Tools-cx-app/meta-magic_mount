@@ -28,6 +28,18 @@
       "saveSuccess": "Config saved successfully",
       "saveError": "Error saving config"
     },
+    "modules": {
+      "title": "Module Configuration",
+      "desc": "Select mount mode for each module. 'Auto' uses OverlayFS for performance, 'Magic Mount' uses bind mounts for compatibility.",
+      "reload": "Refresh List",
+      "save": "Save Modes",
+      "empty": "No modules found.",
+      "scanError": "Failed to scan modules",
+      "saveSuccess": "Modes saved successfully",
+      "saveFailed": "Failed to save modes",
+      "modeAuto": "Auto (OverlayFS)",
+      "modeMagic": "Magic Mount"
+    },
     "logs": {
       "title": "Logs",
       "select": "Select Log File",
@@ -37,14 +49,6 @@
       "empty": "No logs available",
       "readFailed": "Failed to read log",
       "readException": "Error reading log"
-    },
-    "modules": {
-      "title": "Modules",
-      "basePath": "Module Directory",
-      "empty": "No modules found",
-      "reload": "Reload",
-      "loadError": "Failed to load modules",
-      "toggleError": "Failed to toggle module"
     }
   },
   "zh": {
@@ -53,12 +57,12 @@
     },
     "tabs": {
       "config": "配置",
-      "modules": "模块",
+      "modules": "模块配置",
       "logs": "日志"
     },
     "config": {
       "title": "配置",
-      "verboseLabel": "日志级别",
+      "verboseLabel": "详细日志级别",
       "verboseOff": "普通",
       "verboseOn": "详细",
       "moduleDir": "模块目录",
@@ -76,6 +80,18 @@
       "saveSuccess": "配置保存成功",
       "saveError": "保存配置出错"
     },
+    "modules": {
+      "title": "模块挂载模式",
+      "desc": "为每个模块选择挂载模式。'自动' 默认使用 OverlayFS 以获得更好性能，'Magic Mount' 使用传统绑定挂载以获得更好兼容性。",
+      "reload": "刷新列表",
+      "save": "保存设置",
+      "empty": "未找到模块",
+      "scanError": "扫描模块失败",
+      "saveSuccess": "设置保存成功",
+      "saveFailed": "保存设置失败",
+      "modeAuto": "自动 (OverlayFS)",
+      "modeMagic": "Magic Mount"
+    },
     "logs": {
       "title": "日志",
       "select": "选择日志文件",
@@ -85,14 +101,6 @@
       "empty": "暂无日志",
       "readFailed": "读取日志失败",
       "readException": "读取日志出错"
-    },
-    "modules": {
-      "title": "模块",
-      "basePath": "模块目录",
-      "empty": "未找到模块",
-      "reload": "重新加载",
-      "loadError": "加载模块失败",
-      "toggleError": "切换模块失败"
     }
   }
 }
