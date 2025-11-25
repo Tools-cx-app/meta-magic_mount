@@ -1,11 +1,11 @@
 use std::{
-    fs::{create_dir_all, read_to_string, remove_dir_all, remove_file, write},
+    fs::{create_dir_all, remove_dir_all, remove_file, write, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 
 use anyhow::{Context, Result, bail};
-use env_logger::Builder;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use extattr::{Flags as XattrFlags, lsetxattr};
 
@@ -39,7 +39,7 @@ pub fn lgetfilecon<P: AsRef<Path>>(path: P) -> Result<String> {
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
-pub fn lgetfilecon<P: AsRef<Path>>(path: P) -> Result<String> {
+pub fn lgetfilecon<P: AsRef<Path>>(_path: P) -> Result<String> {
     unimplemented!()
 }
 
@@ -52,28 +52,65 @@ pub fn ensure_dir_exists<T: AsRef<Path>>(dir: T) -> Result<()> {
     }
 }
 
-pub fn init_logger(verbose: bool) -> Result<()> {
+// --- Custom File Logger Implementation ---
+struct FileLogger {
+    file: Mutex<std::fs::File>,
+}
+
+impl log::Log for FileLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        // Level filtering is handled by set_max_level
+        true
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            let mut file = self.file.lock().unwrap();
+            // Format: [LEVEL] [Target] Message
+            let _ = writeln!(
+                file,
+                "[{}] [{}] {}",
+                record.level(),
+                record.target(),
+                record.args()
+            );
+        }
+    }
+
+    fn flush(&self) {
+        let _ = self.file.lock().unwrap().flush();
+    }
+}
+
+pub fn init_logger(verbose: bool, log_path: &Path) -> Result<()> {
     let level = if verbose {
         log::LevelFilter::Debug
     } else {
         log::LevelFilter::Info
     };
 
-    let mut builder = Builder::new();
+    // Ensure parent directory exists
+    if let Some(parent) = log_path.parent() {
+        create_dir_all(parent)?;
+    }
 
-    builder.format(|buf, record| {
-        writeln!(
-            buf,
-            "[{}] [{}] {}",
-            record.level(),
-            record.target(),
-            record.args()
-        )
+    // Open file in append mode
+    let file = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(true) // Append to keep history until manual clear
+        .open(log_path)
+        .with_context(|| format!("Failed to open log file: {}", log_path.display()))?;
+
+    let logger = Box::new(FileLogger {
+        file: Mutex::new(file),
     });
-    builder.filter_level(level).init();
 
-    log::info!("log level: {}", level.as_str());
+    log::set_boxed_logger(logger)
+        .map(|()| log::set_max_level(level))
+        .map_err(|e| anyhow::anyhow!("Failed to set logger: {}", e))?;
 
+    log::info!("Logger initialized. Level: {}", level);
     Ok(())
 }
 
@@ -83,7 +120,7 @@ fn is_writable_tmpfs(path: &Path) -> bool {
         return false;
     }
 
-    if let Ok(mounts) = read_to_string("/proc/mounts") {
+    if let Ok(mounts) = std::fs::read_to_string("/proc/mounts") {
         let path_str = path.to_string_lossy();
         let is_tmpfs = mounts.lines().any(|line| {
             let parts: Vec<&str> = line.split_whitespace().collect();

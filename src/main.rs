@@ -77,25 +77,25 @@ fn main() -> Result<()> {
 
     let mut config = load_config(&cli)?;
     config.merge_with_cli(cli.moduledir, cli.tempdir, cli.mountsource, cli.verbose, cli.partitions);
-    // 这里使用了修改后的 utils::init_logger
-    utils::init_logger(config.verbose)?;
+    
+    utils::init_logger(config.verbose, Path::new(defs::DAEMON_LOG_FILE))?;
 
     log::info!("Hybrid Mount Starting...");
 
     // 1. Load Module Modes (User Config)
     let module_modes = config::load_module_modes();
 
-    // --- 修改开始: 使用 HashMap 存储所有有效的模块及其路径 ---
+    // Use HashMap to store active modules and their paths
     let mut active_modules: HashMap<String, PathBuf> = HashMap::new();
 
-    // 1.1 扫描标准模块目录 (Standard Modules)
-    // 这些模块位于 /data/adb/modules，需要检查 disable/remove 文件
+    // 1.1 Scan Standard Modules
     let std_module_ids = scan_enabled_module_ids(Path::new(defs::MODULE_METADATA_DIR))?;
     for id in std_module_ids {
         let path = Path::new(defs::MODULE_CONTENT_DIR).join(&id);
         active_modules.insert(id, path);
     }
 
+    // 1.2 Scan Mnt Directory
     let mnt_base_dir = Path::new(defs::MODULE_CONTENT_DIR).join("meta-hybrid/mnt");
     if mnt_base_dir.exists() {
         log::debug!("Scanning mnt directory: {}", mnt_base_dir.display());
