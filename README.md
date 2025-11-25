@@ -3,6 +3,7 @@
 A Hybrid Mount metamodule for KernelSU/Magisk, implementing both OverlayFS and Magic Mount logic via a native Rust binary.
 
 这是一个用于 KernelSU/Magisk 的混合挂载 (Hybrid Mount) 元模块，通过原生 Rust 二进制文件实现了 OverlayFS 和 Magic Mount 逻辑。
+基于俺寻思和Vibe Coding。
 
 ## **English**
 
