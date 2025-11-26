@@ -63,7 +63,7 @@ jobs:
 
       - name: Build Project
         run: |
-          cargo xtask build --release
+          cargo run -p xtask -- build --release
           
           if [ -f "output/version" ]; then
             echo "MODULE_VERSION=$(cat output/version)" >> $GITHUB_ENV

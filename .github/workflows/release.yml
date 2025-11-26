@@ -95,10 +95,10 @@ jobs:
         run: |
           if [ "${{ steps.key_prep.outputs.has_key }}" == "true" ]; then
             echo "Building with signature..."
-            cargo xtask build --release --sign-key /tmp/private.pem
+            cargo run -p xtask -- build --release --sign-key /tmp/private.pem
           else
             echo "Building without signature..."
-            cargo xtask build --release
+            cargo run -p xtask -- build --release
           fi
 
       - name: Generate Update Files

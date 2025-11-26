@@ -1,5 +1,5 @@
 [workspace]
-members = ["meta-hybrid", "xtask"]
+members = ["xtask"]
 resolver = "2"
 
 [package]
@@ -29,3 +29,10 @@ tracing-log = "0.2" # Captures logs from 'log' crate macros
 # Android specific
 [target.aarch64-linux-android.dependencies]
 android_logger = "0.13" # Optional: kept if you want logcat support alongside file log
+
+[profile.release]
+overflow-checks = false
+codegen-units = 1
+lto = "fat"
+opt-level = "z"
+strip = true
