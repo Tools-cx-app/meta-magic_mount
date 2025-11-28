@@ -1,0 +1,128 @@
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rule-card {
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: background-color 0.2s;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.rule-card:hover {
+  background: var(--md-sys-color-surface-container);
+}
+
+.rule-card.expanded {
+  background: var(--md-sys-color-surface-container);
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.rule-main {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rule-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.module-name {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--md-sys-color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.module-id {
+  font-size: 12px;
+  color: var(--md-sys-color-outline);
+  font-family: var(--md-ref-typeface-mono);
+}
+
+.rule-details {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid var(--md-sys-color-surface-variant);
+  background-color: rgba(0,0,0,0.02);
+}
+
+.module-desc {
+  margin: 12px 0 8px 0;
+  font-size: 14px;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+.module-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--md-sys-color-outline);
+  font-family: var(--md-ref-typeface-mono);
+}
+
+/* Search Bar Styles */
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: 28px;
+  padding: 0 16px;
+  height: 56px;
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+.search-icon {
+  width: 24px;
+  height: 24px;
+  fill: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  height: 100%;
+  font-size: 16px;
+  color: var(--md-sys-color-on-surface);
+  outline: none;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 0.7;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-select {
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  padding-right: 4px;
+  cursor: pointer;
+}
