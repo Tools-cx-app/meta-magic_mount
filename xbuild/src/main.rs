@@ -18,6 +18,8 @@ fn main() -> Result<()> {
     let _ = fs::remove_dir_all(&temp_dir);
     fs::create_dir_all(&temp_dir)?;
 
+    build_webui()?;
+
     let mut cargo = cargo_ndk();
     let args = vec![
         "build",
@@ -41,15 +43,16 @@ fn main() -> Result<()> {
         &dir::CopyOptions::new().overwrite(true).content_only(true),
     )
     .unwrap();
-    fs::remove_file(temp_dir.join(".gitignore")).unwrap();
+    
+    if temp_dir.join(".gitignore").exists() {
+        fs::remove_file(temp_dir.join(".gitignore")).unwrap();
+    }
 
     file::copy(
         bin_path(),
         temp_dir.join("magic_mount_rs"),
         &file::CopyOptions::new().overwrite(true),
     )?;
-
-    build_webui()?;
 
     let options: FileOptions<'_, ()> = FileOptions::default()
         .compression_method(CompressionMethod::Deflated)
