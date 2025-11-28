@@ -183,7 +183,8 @@ EOF_CONFIG
   },
 
   readLogs: async (logPath = PATHS.LOG_FILE, lines = 1000) => {
-    const cmd = `[ -f "${logPath}" ] && tail -n ${lines} "${logPath}" || echo ""`;
+    // FIX: Using cat instead of tail for better compatibility
+    const cmd = `[ -f "${logPath}" ] && cat "${logPath}" || echo ""`;
     const { errno, stdout, stderr } = await exec(cmd);
     if (errno === 0) return stdout || "";
     throw new Error(stderr || "Log file not found");

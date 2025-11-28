@@ -43,23 +43,7 @@
       toggleExpand(id);
     }
   }
-
-  // Handle dropdown change
-  function handleModeChange(mod, newMode) {
-      // Magic Mode means skipMount should be FALSE
-      // Auto Mode means skipMount should be TRUE
-      const wantSkip = newMode === 'auto';
-      if (mod.skipMount !== wantSkip) {
-          store.toggleModuleMode(mod.id, mod.skipMount);
-      }
-  }
 </script>
-
-<div class="md3-card" style="padding: 16px;">
-  <p style="margin: 0; font-size: 14px; color: var(--md-sys-color-on-surface-variant); line-height: 1.5;">
-    {store.L.modules.desc}
-  </p>
-</div>
 
 <div class="search-container">
   <svg class="search-icon" viewBox="0 0 24 24"><path d={ICONS.search} /></svg>
@@ -89,7 +73,6 @@
             <Skeleton width="40%" height="14px" />
           </div>
         </div>
-        <Skeleton width="120px" height="40px" borderRadius="4px" />
       </div>
     {/each}
   </div>
@@ -115,24 +98,6 @@
               <span class="module-id">{mod.id} <span style="opacity:0.6; margin-left: 8px;">{mod.version}</span></span>
             </div>
           </div>
-          
-          <div 
-            class="text-field" 
-            style="margin-bottom:0; width: 140px; flex-shrink: 0;" 
-            onclick={(e) => e.stopPropagation()}
-            onkeydown={(e) => e.stopPropagation()}
-            role="group"
-            tabindex="-1"
-          >
-            <select 
-                value={mod.skipMount ? 'auto' : 'magic'} 
-                onchange={(e) => handleModeChange(mod, e.target.value)}
-                disabled={mod.disabledByFlag}
-            >
-              <option value="auto">{store.L.modules.modeAuto}</option>
-              <option value="magic">{store.L.modules.modeMagic}</option>
-            </select>
-          </div>
         </div>
         
         {#if expandedMap[mod.id]}
@@ -143,6 +108,9 @@
                     Module is disabled or removed via KernelSU manager.
                 </p>
             {/if}
+            <p class="module-meta">
+              Mode: {mod.skipMount ? store.L.modules.modeAuto : store.L.modules.modeMagic}
+            </p>
           </div>
         {/if}
       </div>
