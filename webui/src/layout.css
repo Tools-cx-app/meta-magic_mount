@@ -1,0 +1,30 @@
+/* Main Layout Grid */
+.app-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: hidden;
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+}
+
+.tab-pane {
+  grid-row: 1;
+  grid-column: 1;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 100px; /* Space for bottom actions */
+  max-width: 800px;
+  justify-self: center;
+}

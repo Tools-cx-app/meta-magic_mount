@@ -1,768 +1,82 @@
 <script>
   import { onMount } from 'svelte';
-  import { exec } from 'kernelsu';
-  import locate from './locate.json';
+  import { fly } from 'svelte/transition';
+  import { cubicOut, cubicIn } from 'svelte/easing';
+  import { store } from './lib/store.svelte';
+  import NavBar from './components/NavBar.svelte';
+  import Toast from './components/Toast.svelte';
+  
+  // NOTE: These components will be implemented in the next step.
+  // The build may fail temporarily until they are created.
+  import StatusTab from './routes/StatusTab.svelte';
+  import ConfigTab from './routes/ConfigTab.svelte';
+  import ModulesTab from './routes/ModulesTab.svelte';
+  import LogsTab from './routes/LogsTab.svelte';
+
   import './app.css';
-
-  const DEFAULT_CONFIG = {
-    moduledir: '/data/adb/modules',
-    tempdir: '',
-    mountsource: 'KSU',
-    umount: true,
-    verbose: false,
-    partitions: []
-  };
-
-  const CONFIG_PATH = '/data/adb/magic_mount/config.toml';
-  const DEFAULT_LOG_PATH = '/data/adb/magic_mount/mm.log';
-
-  // i18n
-  let lang = 'en';
-  $: L = locate[lang];
+  import './layout.css';
   
-  // Autoload lang 
-  const availableLanguages = Object.keys(locate).map(code => ({
-    code,
-  name: locate[code]?.lang?.display || code.toUpperCase()
-  }));
+  // Default tab is 'status'
+  let activeTab = $state('status');
+  let transitionDirection = $state(1);
+  let touchStartX = 0;
+  let touchEndX = 0;
 
-  let langDropdownOpen = false;
+  const TABS = ['status', 'config', 'modules', 'logs'];
 
-  function toggleLangDropdown() {
-    langDropdownOpen = !langDropdownOpen;
+  function switchTab(id) {
+    const currentIndex = TABS.indexOf(activeTab);
+    const newIndex = TABS.indexOf(id);
+    if (currentIndex === newIndex) return;
+    transitionDirection = newIndex > currentIndex ? 1 : -1;
+    activeTab = id;
   }
 
-  function selectLanguage(newLang) {
-    lang = newLang;
-    langDropdownOpen = false;
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('mm-lang', newLang);
-    }
+  function handleTouchStart(e) {
+    touchStartX = e.changedTouches[0].screenX;
   }
 
-  function handleClickOutside(event) {
-    const dropdown = event.target.closest('.lang-dropdown');
-    if (!dropdown && langDropdownOpen) {
-      langDropdownOpen = false;
-    }
-  }
-
-  // tabs
-  let activeTab = 'config';
-  let isSwitching = false;
-
-  function switchTab(tab) {
-    if (tab === activeTab || isSwitching) return;
-
-    isSwitching = true;
-
-    setTimeout(() => {
-      activeTab = tab;
-      isSwitching = false;
-    }, 300);
-  }
-
-
-  // config state
-  let config = { ...DEFAULT_CONFIG };
-  let configLoading = false;
-  let configSaving = false;
-  let configMessage = null;
-
-  // log state
-  let logSelection = 'current';
-  let logContent = '';
-  let logLoading = false;
-  let logError = null;
-
-  // partitions input
-  let partitionInput = '';
-
-  // modules state
-  let modules = [];
-  let modulesLoading = false;
-  let modulesError = null;
-
-  // 获取当前日志文件路径
-  function getCurrentLogPath() {
-    // 如果有配置文件中的日志路径，使用它，否则使用默认路径
-    return config.logfile || DEFAULT_LOG_PATH;
-  }
-
-  // 获取旧日志文件路径
-  function getOldLogPath() {
-    const currentPath = getCurrentLogPath();
-    return `${currentPath}.old`;
-  }
-
-  // helpers
-  function isTrueValue(v) {
-    const s = v.trim().toLowerCase();
-    return s === '1' || s === 'true' || s === 'yes' || s === 'on';
-  }
-
-  function stripQuotes(v) {
-    if (v.startsWith('"') && v.endsWith('"')) {
-      return v.slice(1, -1);
-    }
-    return v;
-  }
-
-  function parseKvConfig(text) {
-  try {
-    const result = { ...DEFAULT_CONFIG };
-    const lines = text.split('\n');
-
-    for (let line of lines) {
-      line = line.trim();
-      if (!line || line.startsWith('#')) continue;
-
-      const eqIndex = line.indexOf('=');
-      if (eqIndex < 0) continue;
-
-      let key = line.slice(0, eqIndex).trim();
-      let value = line.slice(eqIndex + 1).trim();
-      if (!key || !value) continue;
-
-      // Try bool / number first
-      if (value === 'true' || value === 'false') {
-        if (key === 'debug') {
-          result.verbose = value === 'true';
-        } else if (key === 'umount') {
-          result.umount = value === 'true';
-        }
-        continue;
-      }
-
-      // Remove double quotes for strings
-      value = stripQuotes(value);
-
-      switch (key) {
-        case 'module_dir':
-          result.moduledir = value;
-          break;
-        case 'temp_dir':
-          result.tempdir = value;
-          break;
-        case 'mount_source':
-          result.mountsource = value;
-          break;
-        case 'log_file':
-          result.logfile = value;
-          break;
-        case 'debug':
-          result.verbose = isTrueValue(value);
-          break;
-        case 'umount':
-          result.umount = isTrueValue(value);
-          break;
-        case 'partitions':
-          result.partitions = value
-            .split(',')
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
-          break;
-      }
-    }
-
-    return result;
-  } catch (e) {
-    console.error('Failed to parse config:', e);
-    return null;
-  }
-}
-
-function serializeKvConfig(cfg) {
-  const lines = [
-    '# Magic Mount Configuration File',
-    '# Generated by Web UI',
-    ''
-  ];
-
-  const q = (s) => {
-    if (!s) return '""';
-    const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    return `"${escaped}"`;
-  };
-
-  lines.push(`module_dir=${q(cfg.moduledir || DEFAULT_CONFIG.moduledir)}`);
-
-  if (cfg.tempdir) {
-    lines.push(`temp_dir=${q(cfg.tempdir)}`);
-  }
-
-  lines.push(`mount_source=${q(cfg.mountsource || DEFAULT_CONFIG.mountsource)}`);
-
-  lines.push(`umount=${cfg.umount ? 'true' : 'false'}`);
-
-  lines.push(`debug=${cfg.verbose ? 'true' : 'false'}`);
-
-  if (cfg.partitions.length > 0) {
-    lines.push(`partitions=${cfg.partitions.join(',')}`);
-  }
-
-  return lines.join('\n');
-}
-
-
-  // load config
-  async function loadConfig() {
-    configLoading = true;
-    configMessage = null;
-
-    try {
-      const { errno, stdout, stderr } = await exec(
-        `[ -f "${CONFIG_PATH}" ] && cat "${CONFIG_PATH}" || echo ""`
-      );
-
-      if (errno !== 0) {
-        console.error(stderr);
-        config = { ...DEFAULT_CONFIG };
-        partitionInput = '';
-        configMessage = L.config.loadError;
-        return;
-      }
-
-      if (!stdout.trim()) {
-        config = { ...DEFAULT_CONFIG };
-        partitionInput = '';
-        configMessage = L.config.loadDefault;
-        return;
-      }
-
-      const parsed = parseKvConfig(stdout);
-      if (parsed) {
-        config = parsed;
-        partitionInput = parsed.partitions.join(', ');
-        configMessage = L.config.loadSuccess;
-      } else {
-        config = { ...DEFAULT_CONFIG };
-        partitionInput = '';
-        configMessage = L.config.loadError;
-      }
-    } catch (e) {
-      console.error(e);
-      config = { ...DEFAULT_CONFIG };
-      partitionInput = '';
-      configMessage = L.config.loadError;
-    } finally {
-      configLoading = false;
-    }
-  }
-
-  // save config
-  async function saveConfig() {
-    configSaving = true;
-    configMessage = null;
-
-    try {
-      const partitions = partitionInput
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s);
-
-      const configToSave = { ...config, partitions };
-
-      const content = serializeKvConfig(configToSave);
-      
-      const tempPath = '/data/local/tmp/magic_mount_config.tmp';
-      const shell = `
-        mkdir -p "$(dirname "${CONFIG_PATH}")" && \
-        cat > "${tempPath}" << 'CONFIG_EOF'
-${content}
-CONFIG_EOF
-        && \
-        mv "${tempPath}" "${CONFIG_PATH}" && \
-        chmod 644 "${CONFIG_PATH}" && \
-        echo "success"
-      `;
-
-      const { errno, stdout, stderr } = await exec(shell);
-
-      if (errno !== 0 || !stdout.includes('success')) {
-        console.error('Save failed:', stderr);
-        configMessage = L.config.saveFailed + ` (errno=${errno})`;
-        
-        const backupShell = `
-          mkdir -p "$(dirname "${CONFIG_PATH}")" && \
-          echo "${content.replace(/\n/g, '\\n').replace(/"/g, '\\"')}" > "${CONFIG_PATH}" && \
-          chmod 644 "${CONFIG_PATH}"
-        `;
-        
-        const { errno: backupErrno, stderr: backupStderr } = await exec(backupShell);
-        if (backupErrno === 0) {
-          config = configToSave;
-          configMessage = L.config.saveSuccess;
-        } else {
-          console.error('Backup save also failed:', backupStderr);
-          configMessage = L.config.saveFailed + ` (backup errno=${backupErrno})`;
-        }
-      } else {
-        config = configToSave;
-        configMessage = L.config.saveSuccess;
-      }
-    } catch (e) {
-      console.error('Save exception:', e);
-      configMessage = L.config.saveError;
-    } finally {
-      configSaving = false;
-    }
-  }
-
-  async function loadLog() {
-    logLoading = true;
-    logError = null;
-    logContent = '';
+  function handleTouchEnd(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    const threshold = 50;
+    const diff = touchStartX - touchEndX;
+    const currentIndex = TABS.indexOf(activeTab);
     
-    try {
-      const logPath = logSelection === 'current' ? getCurrentLogPath() : getOldLogPath();
-      
-      console.log(`Loading log from: ${logPath}`);
-      
-      const checkShell = `[ -f "${logPath}" ] && echo "exists" || echo "not_exists"`;
-      const { stdout: checkStdout } = await exec(checkShell);
-      
-      if (!checkStdout.includes('exists')) {
-        logContent = L.logs.fileNotFound;
-        return;
-      }
+    if (Math.abs(diff) < threshold) return;
 
-      const { errno, stdout, stderr } = await exec(
-        `cat "${logPath}" 2>/dev/null || echo "Failed to read log file"`
-      );
-
-      if (errno !== 0) {
-        console.error('Log read error:', stderr);
-        logError = L.logs.readFailed + ` (errno=${errno})`;
-        logContent = L.logs.readFailed;
-      } else {
-        logContent = stdout || L.logs.empty;
-      }
-    } catch (e) {
-      console.error('Log load exception:', e);
-      logError = L.logs.readException;
-      logContent = L.logs.readException;
-    } finally {
-      logLoading = false;
-    }
-  }
-
-  // load modules
-  async function loadModules() {
-    modulesLoading = true;
-    modulesError = null;
-    modules = [];
-    try {
-      const moduleDir = config.moduledir || DEFAULT_CONFIG.moduledir;
-
-      const shell = `
-        MOD_DIR="${moduleDir}"
-        [ -d "$MOD_DIR" ] || exit 0
-        for m in "$MOD_DIR"/*; do
-          [ -d "$m" ] || continue
-          [ -d "$m/system" ] || continue
-          name="$(basename "$m")"
-          disabled=0
-          skip=0
-          if [ -e "$m/disable" ] || [ -e "$m/remove" ]; then
-            disabled=1
-          fi
-          if [ -e "$m/skip_mount" ]; then
-            skip=1
-          fi
-          printf '%s|%s|%s\n' "$name" "$disabled" "$skip"
-        done
-      `;
-
-      const { errno, stdout, stderr } = await exec(shell);
-
-      if (errno !== 0) {
-        console.error(stderr);
-        modulesError = L.modules.loadError;
-        return;
-      }
-
-      const lines = stdout
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
-
-      modules = lines.map(line => {
-        const [name, disabledStr, skipStr] = line.split('|');
-        return {
-          name: name || '(unknown)',
-          disabledByFlag: disabledStr === '1',
-          skipMount: skipStr === '1',
-          toggling: false
-        };
-      });
-    } catch (e) {
-      console.error(e);
-      modulesError = L.modules.loadError;
-    } finally {
-      modulesLoading = false;
-    }
-  }
-
-  async function toggleSkipMount(event, mod) {
-    if (mod.disabledByFlag) {
-      event.target.checked = !event.target.checked;
-      return
-    };
-
-    const moduleDir = config.moduledir || DEFAULT_CONFIG.moduledir;
-    const modulePath = `${moduleDir}/${mod.name}`;
-
-    modules = modules.map(m =>
-      m.name === mod.name ? { ...m, toggling: true, error: undefined } : m
-    );
-
-    try {
-      const shell = mod.skipMount
-        ? `rm -f "${modulePath}/skip_mount"`
-        : `touch "${modulePath}/skip_mount"`;
-
-      const { errno, stderr } = await exec(shell);
-
-      if (errno !== 0) {
-        console.error(stderr);
-        event.target.checked = !event.target.checked;
-        modules = modules.map(m =>
-          m.name === mod.name ? { ...m, toggling: false, error: L.modules.toggleError } : m
-        );
-      } else {
-        modules = modules.map(m =>
-          m.name === mod.name
-            ? { ...m, skipMount: !m.skipMount, toggling: false, error: undefined }
-            : m
-        );
-      }
-    } catch (e) {
-      console.error(e);
-      event.target.checked = !event.target.checked;
-      modules = modules.map(m =>
-        m.name === mod.name ? { ...m, toggling: false, error: L.modules.toggleError } : m
-      );
+    if (diff > 0 && currentIndex < TABS.length - 1) {
+      switchTab(TABS[currentIndex + 1]);
+    } else if (diff < 0 && currentIndex > 0) {
+      switchTab(TABS[currentIndex - 1]);
     }
   }
 
   onMount(() => {
-    if (typeof window !== 'undefined') {
-      const saved = window.localStorage.getItem('mm-lang');
-      if (saved && locate[saved]) {
-        lang = saved;
-      }
-      
-      // 添加全局点击监听
-      window.addEventListener('click', handleClickOutside);
-      
-      return () => {
-        window.removeEventListener('click', handleClickOutside);
-      };
-    }
-    loadConfig();
+    store.init();
   });
-  // reactive statements for tab changes
-  let configLoaded = false;
-  $: if (activeTab === 'config' && !configLoaded ) {
-    loadConfig().then(() => {
-      configLoaded = true;
-    });
-  }
-  
-  $: if (activeTab === 'log') {
-    loadLog();
-  }
-
-  $: if (activeTab === 'module') {
-    loadModules();
-  }
-
-  onMount(() => {
-    if (typeof window !== 'undefined') {
-      const saved = window.localStorage.getItem('mm-lang');
-      if (saved && locate[saved]) {
-        lang = saved;
-      }
-      
-      window.addEventListener('click', handleClickOutside);
-      
-      return () => {
-        window.removeEventListener('click', handleClickOutside);
-      };
-    }
-  });
-
-  $: effectiveModuleDir = config.moduledir || DEFAULT_CONFIG.moduledir;
 </script>
 
 <div class="app-root">
-  <div class="top-bar">
-    <div class="title">Magic Mount</div>
-    
-    <div class="lang-dropdown">
-      <button 
-        type="button" 
-        class="lang-select" 
-        on:click|stopPropagation={toggleLangDropdown}
-      >
-        {availableLanguages.find(l => l.code === lang)?.name || lang}
-        <span class="arrow {langDropdownOpen ? 'open' : ''}">▼</span>
-      </button>
-      
-      {#if langDropdownOpen}
-        <div class="lang-menu">
-          {#each availableLanguages as { code, name }}
-            <button
-              type="button"
-              class="lang-option {code === lang ? 'active' : ''}"
-              on:click={() => selectLanguage(code)}
-            >
-              {name}
-            </button>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </div>
+  <NavBar {activeTab} onTabChange={switchTab} />
 
-  <div class="app-main">
-    {#if isSwitching}
-      <div class="tab-overlay">
-          <div class="tab-spinner"></div>
-      </div>
-    {/if}
-
+  <main class="main-content" ontouchstart={handleTouchStart} ontouchend={handleTouchEnd}>
     {#key activeTab}
-      {#if activeTab === 'config'}
-        <div
-          class="card"
-          in:fade={{ duration: 180 }}
-          out:fade={{ duration: 180 }}
-        >
-          <h2>{L.config.title}</h2>
-
-          {#if configLoading}
-            <p class="hint">Loading...</p>
-          {/if}
-          {#if configMessage}
-            <p class="hint">{configMessage}</p>
-          {/if}
-
-          <div class="field">
-            <label for="verbose-setting">{L.config.verboseLabel}</label>
-            <div class="loglevel-switch" id="verbose-setting" role="group">
-              <button
-                type="button"
-                class="lv-btn {!config.verbose ? 'active' : ''}"
-                on:click|preventDefault={() => (config.verbose = false)}
-              >
-                {L.config.verboseOff}
-              </button>
-              <button
-                type="button"
-                class="lv-btn {config.verbose ? 'active' : ''}"
-                on:click|preventDefault={() => (config.verbose = true)}
-              >
-                {L.config.verboseOn}
-              </button>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="umount-setting">{L.config.umountLabel}</label>
-            <div class="loglevel-switch" id="umount-setting" role="group">
-              <button
-                type="button"
-                class="lv-btn {!config.umount ? 'active' : ''}"
-                on:click|preventDefault={() => (config.umount = false)}
-              >
-                {L.config.umountOff}
-              </button>
-              <button
-                type="button"
-                class="lv-btn {config.umount ? 'active' : ''}"
-                on:click|preventDefault={() => (config.umount = true)}
-              >
-                {L.config.umountOn}
-              </button>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="moduledir-input">{L.config.moduleDir}</label>
-            <input
-              id="moduledir-input"
-              type="text"
-              bind:value={config.moduledir}
-              placeholder={DEFAULT_CONFIG.moduledir}
-            />
-          </div>
-
-          <div class="field">
-            <label for="tempdir-input">{L.config.tempDir}</label>
-            <input
-              id="tempdir-input"
-              type="text"
-              bind:value={config.tempdir}
-              placeholder="(auto-select if empty)"
-            />
-          </div>
-
-          <div class="field">
-            <label for="mountsource-input">{L.config.mountSource}</label>
-            <input
-              id="mountsource-input"
-              type="text"
-              bind:value={config.mountsource}
-              placeholder={DEFAULT_CONFIG.mountsource}
-            />
-          </div>
-
-          <div class="field">
-            <label for="partitions-input">{L.config.partitions}</label>
-            <input
-              id="partitions-input"
-              type="text"
-              bind:value={partitionInput}
-              placeholder="mi_ext,my_stock"
-            />
-          </div>
-
-          <div class="actions">
-            <button type="button" on:click|preventDefault={loadConfig} disabled={configLoading || configSaving}>
-              {L.config.reload}
-            </button>
-            <button type="button" class="primary" on:click|preventDefault={saveConfig} disabled={configSaving || configLoading}>
-              {configSaving ? 'Saving...' : L.config.save}
-            </button>
-          </div>
-
-          <p class="path">{L.config.pathLabel}: {CONFIG_PATH}</p>
-        </div>
-
-      {:else if activeTab === 'module'}
-        <div
-          class="card"
-          in:fade={{ duration: 180 }}
-          out:fade={{ duration: 180 }}
-        >
-          <h2>{L.modules.title}</h2>
-
-          <p class="path">{L.modules.basePath}: {effectiveModuleDir}</p>
-
-          {#if modulesError}
-            <p class="error">{modulesError}</p>
-          {/if}
-          {#if modulesLoading && modules.length === 0}
-            <p class="hint">Loading...</p>
-          {/if}
-
-          {#if !modulesLoading && modules.length === 0 && !modulesError}
-            <p class="hint">{L.modules.empty}</p>
-          {/if}
-
-          {#if !modulesLoading && modules.length > 0}
-            <div class="module-list">
-              {#each modules as m (m.name)}
-                <div class="module-row">
-                  <div class="module-info">
-                    <span class="module-name">{m.name}</span>
-                    <label class="switch {m.disabledByFlag ? 'disabled' : ''}">
-                      <input
-                        type="checkbox"
-                        checked={m.disabledByFlag ? false : !m.skipMount}
-                        disabled={m.disabledByFlag || m.toggling}
-                        on:change={(e) => {
-                          if (!m.disabledByFlag) toggleSkipMount(e,m);
-                        }}
-                      />
-                      <span class="slider"></span>
-                    </label>
-                  </div>
-
-
-                  {#if m.error}
-                    <div class="error small">{m.error}</div>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          {/if}
-
-          <div class="actions" style="margin-top: 20px">
-            <button type="button" on:click|preventDefault={loadModules} disabled={modulesLoading}>
-              {modulesLoading ? 'Loading...' : L.modules.reload}
-            </button>
-          </div>
-        </div>
-
-      {:else}
-        <div
-          class="card"
-          in:fade={{ duration: 180 }}
-          out:fade={{ duration: 180 }}
-        >
-          <h2>{L.logs.title}</h2>
-
-          <div class="field">
-            <label for="log-select">{L.logs.select}</label>
-            <div class="log-select-row">
-              <select id="log-select" bind:value={logSelection}>
-                <option value="current">{L.logs.current}</option>
-                <option value="old">{L.logs.old}</option>
-              </select>
-
-              <button type="button" class="refresh-btn" on:click|preventDefault={loadLog} disabled={logLoading}>
-                {logLoading ? 'Loading...' : L.logs.refresh}
-              </button>
-            </div>
-          </div>
-
-          {#if logError}
-            <p class="error">{logError}</p>
-          {/if}
-
-          <!-- 显示当前加载的日志文件路径 -->
-          <p class="path">
-            {L.logs.currentPath}: 
-            {logSelection === 'current' ? getCurrentLogPath() : getOldLogPath()}
-          </p>
-
-          <pre class="log-view">{logLoading && !logContent ? 'Loading...' : logContent || L.logs.empty}</pre>
-        </div>
-      {/if}
+      <div class="tab-pane" 
+           in:fly={{ x: 30 * transitionDirection, duration: 250, delay: 90, easing: cubicOut }} 
+           out:fly={{ x: -30 * transitionDirection, duration: 150, easing: cubicIn }}>
+        
+        {#if activeTab === 'status'}
+          <StatusTab />
+        {:else if activeTab === 'config'}
+          <ConfigTab />
+        {:else if activeTab === 'modules'}
+          <ModulesTab />
+        {:else if activeTab === 'logs'}
+          <LogsTab />
+        {/if}
+      </div>
     {/key}
-  </div>
+  </main>
 
-  <div class="bottom-bar">
-    <button
-      type="button"
-      class="tab-btn {activeTab === 'config' ? 'active' : ''}"
-      on:click|preventDefault={() => switchTab('config')}
-    >
-      {L.tabs.config}
-    </button>
-
-    <button
-      type="button"
-      class="tab-btn {activeTab === 'module' ? 'active' : ''}"
-      on:click|preventDefault={() => switchTab('module')}
-    >
-      {L.tabs.modules}
-    </button>
-
-    <button
-      type="button"
-      class="tab-btn {activeTab === 'log' ? 'active' : ''}"
-      on:click|preventDefault={() => switchTab('log')}
-    >
-      {L.tabs.logs}
-    </button>
-  </div>
-
+  <Toast />
 </div>
-
-<style>
-  /* Component-specific styles only if needed */
-</style>
