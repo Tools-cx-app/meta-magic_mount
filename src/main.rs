@@ -105,7 +105,7 @@ fn update_module_prop(storage_mode: &str, nuke_active: bool, overlay_count: usiz
     
     // Construct the cute string
     let new_desc = format!(
-        "description=😋运行中喵～ ({}) {} | Overlay: {} | Magic: {}{}", 
+        "description=😋 运行中喵～ ({}) {} | Overlay: {} | Magic: {}{}", 
         mode_str, status_emoji, overlay_count, magic_count, nuke_str
     );
 
