@@ -1,0 +1,84 @@
+{
+  "lang": { "display": "English" },
+  "common": {
+    "appName": "Magic Mount",
+    "saving": "Saving...",
+    "theme": "Toggle Theme",
+    "language": "Language"
+  },
+  "tabs": {
+    "status": "Status",
+    "config": "Config",
+    "modules": "Modules",
+    "logs": "Logs"
+  },
+  "status": {
+    "storageTitle": "Storage",
+    "storageDesc": "Usage of /data/adb",
+    "moduleTitle": "Modules",
+    "moduleActive": "Active Modules",
+    "modeStats": "Mode Statistics",
+    "modeAuto": "OverlayFS",
+    "modeMagic": "Magic Mount"
+  },
+  "config": {
+    "title": "Configuration",
+    "verboseLabel": "Verbose Logging",
+    "verboseOff": "Off",
+    "verboseOn": "On",
+    "umountLabel": "Unmount Modules",
+    "umountOff": "Default",
+    "umountOn": "Enabled",
+    "moduleDir": "Module Directory",
+    "tempDir": "Temp Directory",
+    "mountSource": "Mount Source",
+    "logFile": "Log File",
+    "partitions": "Extra Partitions",
+    "autoPlaceholder": "Auto-select if empty",
+    "reload": "Reload",
+    "save": "Save Config",
+    "reset": "Reset",
+    "invalidPath": "Invalid path detected",
+    "loadSuccess": "Config loaded successfully",
+    "loadError": "Failed to load config",
+    "loadDefault": "Loaded default config",
+    "saveSuccess": "Configuration saved",
+    "saveFailed": "Failed to save configuration"
+  },
+  "modules": {
+    "title": "Module Modes",
+    "desc": "Switch to 'Magic Mount' if a module causes bootloops or issues with the default OverlayFS implementation.",
+    "modeAuto": "OverlayFS",
+    "modeMagic": "Magic Mount",
+    "scanning": "Scanning...",
+    "reload": "Refresh",
+    "save": "Save Changes",
+    "empty": "No modules found",
+    "scanError": "Failed to scan modules",
+    "saveSuccess": "Module modes saved",
+    "saveFailed": "Failed to save module modes",
+    "searchPlaceholder": "Search modules...",
+    "filterLabel": "Filter:",
+    "filterAll": "All",
+    "toggleError": "Failed to toggle module mode"
+  },
+  "logs": {
+    "title": "System Logs",
+    "loading": "Loading logs...",
+    "refresh": "Refresh",
+    "empty": "Log file is empty",
+    "readFailed": "Failed to read logs",
+    "readException": "Error reading log file",
+    "searchPlaceholder": "Search logs...",
+    "filterLabel": "Level:",
+    "levels": {
+      "all": "All",
+      "info": "Info",
+      "warn": "Warn",
+      "error": "Error"
+    },
+    "copy": "Copy",
+    "copySuccess": "Logs copied to clipboard",
+    "copyFail": "Failed to copy logs"
+  }
+}
