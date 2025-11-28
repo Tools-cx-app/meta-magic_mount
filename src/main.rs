@@ -8,6 +8,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use config::{CONFIG_FILE_DEFAULT, Config};
 
+use crate::magic_mount::UMOUNT;
+
 #[derive(Parser, Debug)]
 #[command(name = "magic_mount", version, about = "Magic Mount Metamodule")]
 struct Cli {
@@ -34,6 +36,10 @@ struct Cli {
     /// Extra partitions, comma-separated, eg: -p mi_ext,my_stock
     #[arg(short = 'p', long = "partitions", value_delimiter = ',')]
     partitions: Vec<String>,
+
+    /// Disbale umount
+    #[arg(long = "-no-umount")]
+    umount: bool,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -97,6 +103,7 @@ fn main() -> Result<()> {
         cli.tempdir,
         cli.mountsource,
         cli.verbose,
+        cli.umount,
         cli.partitions,
     );
 
@@ -123,6 +130,9 @@ fn main() -> Result<()> {
 
     utils::ensure_temp_dir(&tempdir)?;
 
+    if config.umount {
+        UMOUNT.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     let result = magic_mount::magic_mount(
         &tempdir,
         &config.moduledir,

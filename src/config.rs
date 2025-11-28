@@ -17,6 +17,7 @@ pub struct Config {
     pub mountsource: String,
     pub verbose: bool,
     pub partitions: Vec<String>,
+    pub umount: bool,
 }
 
 fn default_moduledir() -> PathBuf {
@@ -34,6 +35,7 @@ impl Default for Config {
             tempdir: None,
             mountsource: default_mountsource(),
             verbose: false,
+            umount: false,
             partitions: Vec::new(),
         }
     }
@@ -75,6 +77,7 @@ impl Config {
         tempdir: Option<PathBuf>,
         mountsource: Option<String>,
         verbose: bool,
+        umount: bool,
         partitions: Vec<String>,
     ) {
         if let Some(dir) = moduledir {
@@ -88,6 +91,9 @@ impl Config {
         }
         if verbose {
             self.verbose = true;
+        }
+        if umount {
+            self.umount = true;
         }
         if !partitions.is_empty() {
             self.partitions = partitions;
