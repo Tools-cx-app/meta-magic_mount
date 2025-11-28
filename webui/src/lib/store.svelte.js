@@ -8,7 +8,7 @@ const localeModules = import.meta.glob('../locales/*.json', { eager: true });
 export const store = $state({
   config: { ...DEFAULT_CONFIG },
   modules: [],
-  logs: [],
+  logs: "", // Changed: logs is now a simple string
   storage: { used: '-', size: '-', percent: '0%', type: 'unknown' },
   
   // UI State
@@ -56,11 +56,6 @@ export const store = $state({
     let auto = 0;
     let magic = 0;
     this.modules.forEach(m => {
-      // Logic: skipMount=true means 'magic' mode in terms of "we are intervening" 
-      // or "default" depending on definition. 
-      // In original code: skip_mount present = skip.
-      // Hybrid UI uses 'magic' vs 'auto'.
-      // Let's align: skipMount=true -> Magic Mode (Intervention)
       if (m.skipMount) magic++;
       else auto++;
     });
@@ -146,7 +141,6 @@ export const store = $state({
   async toggleModuleMode(moduleId, currentSkip) {
       try {
           await API.toggleSkipMount(moduleId, !currentSkip, this.config.moduledir);
-          // Update local state optimistically
           this.modules = this.modules.map(m => 
               m.id === moduleId ? { ...m, skipMount: !currentSkip, mode: (!currentSkip ? 'magic' : 'auto') } : m
           );
@@ -158,20 +152,10 @@ export const store = $state({
   async loadLogs(silent = false) {
     if (!silent) this.loading.logs = true;
     try {
-      const raw = await API.readLogs(PATHS.LOG_FILE, 1000);
-      if (!raw) {
-        this.logs = [{ text: this.L.logs.empty, type: 'debug' }];
-      } else {
-        this.logs = raw.split('\n').map(line => {
-          let type = 'debug';
-          if (line.includes('[ERROR]')) type = 'error';
-          else if (line.includes('[WARN]')) type = 'warn';
-          else if (line.includes('[INFO]')) type = 'info';
-          return { text: line, type };
-        });
-      }
+      const raw = await API.readLogs();
+      this.logs = raw || this.L.logs.empty;
     } catch (e) {
-      this.logs = [{ text: `Error: ${e.message}`, type: 'error' }];
+      this.logs = `Error loading logs: ${e.message}`;
       if (!silent) this.showToast(this.L.logs.readFailed, 'error');
     }
     this.loading.logs = false;
