@@ -1,17 +1,11 @@
 mod node;
 mod try_umount;
 
-pub(super) const DISABLE_FILE_NAME: &str = "disable";
-pub(super) const REMOVE_FILE_NAME: &str = "remove";
-pub(super) const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
-pub(super) const REPLACE_DIR_FILE_NAME: &str = ".replace";
-
-pub(super) const REPLACE_DIR_XATTR: &str = "trusted.overlay.opaque";
-
 use std::{
     fs::{self, DirEntry, create_dir, create_dir_all, read_dir, read_link},
     os::unix::fs::{MetadataExt, symlink},
     path::Path,
+    sync::atomic::AtomicBool,
 };
 
 use anyhow::{Context, Result, bail};
@@ -32,6 +26,15 @@ use crate::{
     utils::{ensure_dir_exists, lgetfilecon, lsetfilecon},
 };
 
+
+pub(super) const DISABLE_FILE_NAME: &str = "disable";
+pub(super) const REMOVE_FILE_NAME: &str = "remove";
+pub(super) const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
+pub(super) const REPLACE_DIR_FILE_NAME: &str = ".replace";
+pub(super) const REPLACE_DIR_XATTR: &str = "trusted.overlay.opaque";
+
+pub static UMOUNT: AtomicBool = AtomicBool::new(false);
+
 fn collect_module_files(module_dir: &Path, extra_partitions: &[String]) -> Result<Option<Node>> {
     let mut root = Node::new_root("");
     let mut system = Node::new_root("system");
@@ -50,14 +53,14 @@ fn collect_module_files(module_dir: &Path, extra_partitions: &[String]) -> Resul
             continue;
         }
 
-        let module_system = entry.path().join("system");
-        if !module_system.is_dir() {
+        let mod_system = entry.path().join("system");
+        if !mod_system.is_dir() {
             continue;
         }
 
         log::debug!("collecting {}", entry.path().display());
 
-        has_file |= system.collect_module_files(&module_system)?;
+        has_file |= system.collect_module_files(&mod_system)?;
     }
 
     if has_file {
@@ -191,8 +194,10 @@ fn do_magic_mount<P: AsRef<Path>, WP: AsRef<Path>>(
                     work_dir_path.display()
                 );
                 mount_bind(module_path, target_path).with_context(|| {
-                    // tell ksu about this mount
-                    let _ = send_unmountable(target_path);
+                    if UMOUNT.load(std::sync::atomic::Ordering::Relaxed) {
+                        // tell ksu about this mount
+                        let _ = send_unmountable(target_path);
+                    }
                     format!("mount module file {module_path:?} -> {work_dir_path:?}")
                 })?;
                 // we should use MS_REMOUNT | MS_BIND | MS_xxx to change mount flags
@@ -360,8 +365,10 @@ fn do_magic_mount<P: AsRef<Path>, WP: AsRef<Path>>(
                 if let Err(e) = mount_change(&path, MountPropagationFlags::PRIVATE) {
                     log::warn!("make dir {path:?} private: {e:#?}");
                 }
-                // tell ksu about this one too
-                let _ = send_unmountable(path);
+                if UMOUNT.load(std::sync::atomic::Ordering::Relaxed) {
+                    // tell ksu about this one too
+                    let _ = send_unmountable(path);
+                }
             }
         }
         NodeFileType::Whiteout => {

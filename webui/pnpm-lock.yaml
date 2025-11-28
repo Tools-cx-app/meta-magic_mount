@@ -14,10 +14,10 @@ importers:
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^6.2.1
-        version: 6.2.1(svelte@5.43.14)(vite@7.2.4)
+        version: 6.2.1(svelte@5.43.15)(vite@7.2.4)
       svelte:
-        specifier: ^5.43.8
-        version: 5.43.14
+        specifier: ^5.43.15
+        version: 5.43.15
       vite:
         specifier: ^7.2.4
         version: 7.2.4
@@ -424,8 +424,8 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
-  svelte@5.43.14:
-    resolution: {integrity: sha512-pHeUrp1A5S6RGaXhJB7PtYjL1VVjbVrJ2EfuAoPu9/1LeoMaJa/pcdCsCSb0gS4eUHAHnhCbUDxORZyvGK6kOQ==}
+  svelte@5.43.15:
+    resolution: {integrity: sha512-FYlfm3oyLBNUy2NGqaWfKPiGOamS6YB8BJwAcF9xSXVFUjfcl9Ded1YSMu1vXEf0y0lcmBj45UgnOY2ZxhW0Cw==}
     engines: {node: '>=18'}
 
   tinyglobby@0.2.15:
@@ -652,22 +652,22 @@ snapshots:
     dependencies:
       acorn: 8.15.0
 
-  '@sveltejs/vite-plugin-svelte-inspector@5.0.1(@sveltejs/vite-plugin-svelte@6.2.1(svelte@5.43.14)(vite@7.2.4))(svelte@5.43.14)(vite@7.2.4)':
+  '@sveltejs/vite-plugin-svelte-inspector@5.0.1(@sveltejs/vite-plugin-svelte@6.2.1(svelte@5.43.15)(vite@7.2.4))(svelte@5.43.15)(vite@7.2.4)':
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 6.2.1(svelte@5.43.14)(vite@7.2.4)
+      '@sveltejs/vite-plugin-svelte': 6.2.1(svelte@5.43.15)(vite@7.2.4)
       debug: 4.4.3
-      svelte: 5.43.14
+      svelte: 5.43.15
       vite: 7.2.4
     transitivePeerDependencies:
       - supports-color
 
-  '@sveltejs/vite-plugin-svelte@6.2.1(svelte@5.43.14)(vite@7.2.4)':
+  '@sveltejs/vite-plugin-svelte@6.2.1(svelte@5.43.15)(vite@7.2.4)':
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 5.0.1(@sveltejs/vite-plugin-svelte@6.2.1(svelte@5.43.14)(vite@7.2.4))(svelte@5.43.14)(vite@7.2.4)
+      '@sveltejs/vite-plugin-svelte-inspector': 5.0.1(@sveltejs/vite-plugin-svelte@6.2.1(svelte@5.43.15)(vite@7.2.4))(svelte@5.43.15)(vite@7.2.4)
       debug: 4.4.3
       deepmerge: 4.3.1
       magic-string: 0.30.21
-      svelte: 5.43.14
+      svelte: 5.43.15
       vite: 7.2.4
       vitefu: 1.1.1(vite@7.2.4)
     transitivePeerDependencies:
@@ -787,7 +787,7 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  svelte@5.43.14:
+  svelte@5.43.15:
     dependencies:
       '@jridgewell/remapping': 2.3.5
       '@jridgewell/sourcemap-codec': 1.5.5

@@ -8,12 +8,13 @@
     moduledir: '/data/adb/modules',
     tempdir: '',
     mountsource: 'KSU',
-    logfile: '/data/adb/magic_mount/mm.log',
+    umount: true,
     verbose: false,
     partitions: []
   };
 
   const CONFIG_PATH = '/data/adb/magic_mount/config.toml';
+  const DEFAULT_LOG_PATH = '/data/adb/magic_mount/mm.log';
 
   // i18n
   let lang = 'en';
@@ -82,6 +83,18 @@
   let modulesLoading = false;
   let modulesError = null;
 
+  // 获取当前日志文件路径
+  function getCurrentLogPath() {
+    // 如果有配置文件中的日志路径，使用它，否则使用默认路径
+    return config.logfile || DEFAULT_LOG_PATH;
+  }
+
+  // 获取旧日志文件路径
+  function getOldLogPath() {
+    const currentPath = getCurrentLogPath();
+    return `${currentPath}.old`;
+  }
+
   // helpers
   function isTrueValue(v) {
     const s = v.trim().toLowerCase();
@@ -113,7 +126,11 @@
 
       // Try bool / number first
       if (value === 'true' || value === 'false') {
-        result.verbose = value === 'true';
+        if (key === 'debug') {
+          result.verbose = value === 'true';
+        } else if (key === 'umount') {
+          result.umount = value === 'true';
+        }
         continue;
       }
 
@@ -135,6 +152,9 @@
           break;
         case 'debug':
           result.verbose = isTrueValue(value);
+          break;
+        case 'umount':
+          result.umount = isTrueValue(value);
           break;
         case 'partitions':
           result.partitions = value
@@ -159,7 +179,12 @@ function serializeKvConfig(cfg) {
     ''
   ];
 
-  const q = (s) => `"${s}"`;
+  const q = (s) => {
+    if (!s) return '""';
+    const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `"${escaped}"`;
+  };
+
   lines.push(`module_dir=${q(cfg.moduledir || DEFAULT_CONFIG.moduledir)}`);
 
   if (cfg.tempdir) {
@@ -168,8 +193,7 @@ function serializeKvConfig(cfg) {
 
   lines.push(`mount_source=${q(cfg.mountsource || DEFAULT_CONFIG.mountsource)}`);
 
-  const logFile = cfg.logfile || DEFAULT_CONFIG.logfile;
-  lines.push(`log_file=${q(logFile)}`);
+  lines.push(`umount=${cfg.umount ? 'true' : 'false'}`);
 
   lines.push(`debug=${cfg.verbose ? 'true' : 'false'}`);
 
@@ -240,52 +264,84 @@ function serializeKvConfig(cfg) {
       const configToSave = { ...config, partitions };
 
       const content = serializeKvConfig(configToSave);
-      const escapedContent = content.replace(/'/g, "'\\''");
-
+      
+      const tempPath = '/data/local/tmp/magic_mount_config.tmp';
       const shell = `
         mkdir -p "$(dirname "${CONFIG_PATH}")" && \
-        printf '%s\n' '${escapedContent}' > "${CONFIG_PATH}"
+        cat > "${tempPath}" << 'CONFIG_EOF'
+${content}
+CONFIG_EOF
+        && \
+        mv "${tempPath}" "${CONFIG_PATH}" && \
+        chmod 644 "${CONFIG_PATH}" && \
+        echo "success"
       `;
 
-      const { errno, stderr } = await exec(shell);
+      const { errno, stdout, stderr } = await exec(shell);
 
-      if (errno !== 0) {
-        console.error(stderr);
-        configMessage = L.config.saveFailed;
+      if (errno !== 0 || !stdout.includes('success')) {
+        console.error('Save failed:', stderr);
+        configMessage = L.config.saveFailed + ` (errno=${errno})`;
+        
+        const backupShell = `
+          mkdir -p "$(dirname "${CONFIG_PATH}")" && \
+          echo "${content.replace(/\n/g, '\\n').replace(/"/g, '\\"')}" > "${CONFIG_PATH}" && \
+          chmod 644 "${CONFIG_PATH}"
+        `;
+        
+        const { errno: backupErrno, stderr: backupStderr } = await exec(backupShell);
+        if (backupErrno === 0) {
+          config = configToSave;
+          configMessage = L.config.saveSuccess;
+        } else {
+          console.error('Backup save also failed:', backupStderr);
+          configMessage = L.config.saveFailed + ` (backup errno=${backupErrno})`;
+        }
       } else {
         config = configToSave;
         configMessage = L.config.saveSuccess;
       }
     } catch (e) {
-      console.error(e);
+      console.error('Save exception:', e);
       configMessage = L.config.saveError;
     } finally {
       configSaving = false;
     }
   }
 
-  // load log
   async function loadLog() {
     logLoading = true;
     logError = null;
     logContent = '';
+    
     try {
-      const basePath = config.logfile || DEFAULT_CONFIG.logfile;
-      const fullPath = logSelection === 'current' ? basePath : `${basePath}.old`;
+      const logPath = logSelection === 'current' ? getCurrentLogPath() : getOldLogPath();
+      
+      console.log(`Loading log from: ${logPath}`);
+      
+      const checkShell = `[ -f "${logPath}" ] && echo "exists" || echo "not_exists"`;
+      const { stdout: checkStdout } = await exec(checkShell);
+      
+      if (!checkStdout.includes('exists')) {
+        logContent = L.logs.fileNotFound;
+        return;
+      }
 
       const { errno, stdout, stderr } = await exec(
-        `[ -f "${fullPath}" ] && cat "${fullPath}" || echo "Log file not found"`
+        `cat "${logPath}" 2>/dev/null || echo "Failed to read log file"`
       );
 
       if (errno !== 0) {
-        console.error(stderr);
+        console.error('Log read error:', stderr);
         logError = L.logs.readFailed + ` (errno=${errno})`;
+        logContent = L.logs.readFailed;
       } else {
-        logContent = stdout || '';
+        logContent = stdout || L.logs.empty;
       }
     } catch (e) {
-      console.error(e);
+      console.error('Log load exception:', e);
       logError = L.logs.readException;
+      logContent = L.logs.readException;
     } finally {
       logLoading = false;
     }
@@ -514,6 +570,26 @@ function serializeKvConfig(cfg) {
           </div>
 
           <div class="field">
+            <label for="umount-setting">{L.config.umountLabel}</label>
+            <div class="loglevel-switch" id="umount-setting" role="group">
+              <button
+                type="button"
+                class="lv-btn {!config.umount ? 'active' : ''}"
+                on:click|preventDefault={() => (config.umount = false)}
+              >
+                {L.config.umountOff}
+              </button>
+              <button
+                type="button"
+                class="lv-btn {config.umount ? 'active' : ''}"
+                on:click|preventDefault={() => (config.umount = true)}
+              >
+                {L.config.umountOn}
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
             <label for="moduledir-input">{L.config.moduleDir}</label>
             <input
               id="moduledir-input"
@@ -646,6 +722,12 @@ function serializeKvConfig(cfg) {
           {#if logError}
             <p class="error">{logError}</p>
           {/if}
+
+          <!-- 显示当前加载的日志文件路径 -->
+          <p class="path">
+            {L.logs.currentPath}: 
+            {logSelection === 'current' ? getCurrentLogPath() : getOldLogPath()}
+          </p>
 
           <pre class="log-view">{logLoading && !logContent ? 'Loading...' : logContent || L.logs.empty}</pre>
         </div>
