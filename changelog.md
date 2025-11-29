@@ -1,6 +1,6 @@
-## v0.2.5-@4f89dd4-g4f89dd4
+## v0.2.5-@d4e5604-gd4e5604
 
-Changes since v0.2.5-@05321aa:
-* style: rename 'Nuke' to 'Paw Pad/肉垫' across UI and logs
-* fix(core): ignore lost+found directory in module scan to correct overlay count
-* [skip ci] Update KernelSU json and changelog for v0.2.5-@05321aa
+Changes since v0.2.5-@4f89dd4:
+* Bump version to 0.2.5
+* feat: add disable_umount config to skip namespace detaching
+* [skip ci] Update KernelSU json and changelog for v0.2.5-@4f89dd4
