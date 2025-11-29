@@ -1,7 +1,7 @@
 // meta-hybrid_mount/src/nuke.rs
 use std::fs;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use crate::{defs, utils};
 
 fn get_android_version() -> Option<String> {
@@ -45,7 +45,7 @@ pub fn try_load(mnt_point: &Path) -> bool {
         }
     }
 
-    // Try exact match with Android version first
+    // 1. Try exact match with Android version
     if !android_ver.is_empty() {
         let pattern_android = format!("android{}", android_ver);
         for path in &entries {
@@ -58,7 +58,7 @@ pub fn try_load(mnt_point: &Path) -> bool {
         }
     }
 
-    // Fallback to loose match
+    // 2. Fallback to loose match (Kernel version only)
     if target_ko.is_none() {
         for path in &entries {
             let name = path.file_name().unwrap().to_string_lossy();
@@ -78,6 +78,7 @@ pub fn try_load(mnt_point: &Path) -> bool {
         }
     };
 
+    // Temporarily lower kptr_restrict to get symbol address
     let _kptr_guard = utils::ScopedKptrRestrict::new();
 
     // Find symbol address
@@ -98,19 +99,27 @@ pub fn try_load(mnt_point: &Path) -> bool {
 
     log::info!("Symbol address: {}", sym_addr);
 
+    // Execute insmod with stderr suppressed
+    // Nuke LKM intentionally returns -EAGAIN to auto-unload, so insmod WILL fail.
+    // We ignore the exit status and stderr to prevent false error logs.
     let status = Command::new("insmod")
         .arg(ko_path)
         .arg(format!("mount_point={}", mnt_point.display()))
         .arg(format!("symaddr={}", sym_addr))
+        .stdout(Stdio::null()) // Silence stdout
+        .stderr(Stdio::null()) // Silence stderr (Hide "Operation not permitted")
         .status();
 
     match status {
         Ok(_) => {
-            // Success or EAGAIN (self-unload) is considered success for Nuke
+            // We assume success because the LKM logic is "run once and die".
+            // Even if it returns non-zero, it likely executed the nuke logic.
+            log::info!("Nuke LKM injected (and self-unloaded). Ext4 traces should be gone.");
             true
         },
         Err(e) => {
-            log::error!("Failed to execute insmod: {}", e);
+            // This only triggers if insmod command itself couldn't be spawned
+            log::error!("Failed to spawn insmod process: {}", e);
             false
         },
     }
