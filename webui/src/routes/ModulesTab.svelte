@@ -7,7 +7,6 @@
   import './ModulesTab.css';
 
   let searchQuery = $state('');
-  let filterType = $state('all');
   let expandedMap = $state({});
 
   onMount(() => {
@@ -17,14 +16,7 @@
   let filteredModules = $derived(store.modules.filter(m => {
     const q = searchQuery.toLowerCase();
     const matchSearch = m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
-    
-    // Logic: 'magic' means managed by this tool (skip_mount absent)
-    // 'auto' means default overlayfs (skip_mount present)
-    let matchFilter = true;
-    if (filterType === 'magic') matchFilter = !m.skipMount;
-    if (filterType === 'auto') matchFilter = m.skipMount;
-    
-    return matchSearch && matchFilter;
+    return matchSearch;
   }));
 
   function toggleExpand(id) {
@@ -33,7 +25,6 @@
     } else {
       expandedMap[id] = true;
     }
-    // Trigger reactivity
     expandedMap = { ...expandedMap };
   }
 
@@ -53,14 +44,6 @@
     placeholder={store.L.modules.searchPlaceholder}
     bind:value={searchQuery}
   />
-  <div class="filter-controls">
-    <span style="font-size: 12px; color: var(--md-sys-color-on-surface-variant);">{store.L.modules.filterLabel}</span>
-    <select class="filter-select" bind:value={filterType}>
-      <option value="all">{store.L.modules.filterAll}</option>
-      <option value="auto">{store.L.modules.modeAuto}</option>
-      <option value="magic">{store.L.modules.modeMagic}</option>
-    </select>
-  </div>
 </div>
 
 {#if store.loading.modules}
