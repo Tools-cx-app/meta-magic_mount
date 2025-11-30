@@ -14,13 +14,13 @@
     "logs": "日志"
   },
   "status": {
-    "storageTitle": "存储空间",
-    "storageDesc": "/data/adb 占用情况",
+    "deviceTitle": "设备信息",
     "moduleTitle": "模块概览",
-    "moduleActive": "活跃模块",
-    "modeStats": "模式统计",
-    "modeAuto": "OverlayFS",
-    "modeMagic": "Magic Mount"
+    "moduleActive": "挂载模块",
+    "modelLabel": "机型",
+    "androidLabel": "安卓版本",
+    "kernelLabel": "内核版本",
+    "selinuxLabel": "SELinux"
   },
   "config": {
     "title": "配置",
@@ -47,21 +47,19 @@
     "saveFailed": "保存配置失败"
   },
   "modules": {
-    "title": "模块模式",
-    "desc": "如果模块导致无限重启或 OverlayFS 兼容性问题，请尝试切换为 Magic Mount 模式。",
-    "modeAuto": "OverlayFS",
-    "modeMagic": "Magic Mount",
+    "title": "挂载列表",
+    "desc": "以下是检测到并参与 Magic Mount 挂载的模块。",
     "scanning": "扫描中...",
     "reload": "刷新列表",
     "save": "保存更改",
-    "empty": "未找到模块",
+    "empty": "未检测到有效模块",
     "scanError": "扫描模块失败",
-    "saveSuccess": "模块模式已保存",
-    "saveFailed": "保存模块模式失败",
+    "saveSuccess": "模块配置已保存",
+    "saveFailed": "保存失败",
     "searchPlaceholder": "搜索模块...",
     "filterLabel": "筛选:",
     "filterAll": "全部",
-    "toggleError": "切换模块模式失败"
+    "toggleError": "操作失败"
   },
   "logs": {
     "title": "运行日志",
@@ -79,7 +77,7 @@
       "error": "错误"
     },
     "copy": "复制",
-    "copySuccess": "日志已复制到剪贴板",
+    "copySuccess": "日志已复制",
     "copyFail": "复制失败"
   }
 }

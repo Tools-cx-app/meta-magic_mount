@@ -8,7 +8,7 @@ export const store = $state({
   config: { ...DEFAULT_CONFIG },
   modules: [],
   logs: "", 
-  storage: { used: '-', size: '-', percent: '0%', type: 'unknown' },
+  device: { model: 'Loading...', android: '-', kernel: '-', selinux: '-' },
   
   loading: { config: false, modules: false, logs: false, status: false },
   saving: { config: false, modules: false },
@@ -40,12 +40,12 @@ export const store = $state({
 
   getFallbackLocale() {
     return {
-        common: { appName: "Hybrid Mount", saving: "...", theme: "Theme", language: "Language", themeAuto: "Auto", themeLight: "Light", themeDark: "Dark" },
+        common: { appName: "Magic Mount", saving: "...", theme: "Theme", language: "Language", themeAuto: "Auto", themeLight: "Light", themeDark: "Dark" },
         lang: { display: "English" },
         tabs: { status: "Status", config: "Config", modules: "Modules", logs: "Logs" },
-        status: { storageTitle: "Storage", storageDesc: "/data/adb usage", moduleTitle: "Modules", moduleActive: "Active", modeStats: "Stats", modeAuto: "Auto", modeMagic: "Magic" },
+        status: { deviceTitle: "Device Info", moduleTitle: "Modules", moduleActive: "Active Modules", modelLabel: "Model", androidLabel: "Android", kernelLabel: "Kernel", selinuxLabel: "SELinux" },
         config: { title: "Config", verboseLabel: "Verbose", verboseOff: "Off", verboseOn: "On", moduleDir: "Module Dir", tempDir: "Temp Dir", mountSource: "Mount Source", logFile: "Log File", partitions: "Partitions", autoPlaceholder: "Auto", reload: "Reload", save: "Save", reset: "Reset", invalidPath: "Invalid path", loadSuccess: "Config Loaded", loadError: "Load Error", loadDefault: "Using Default", saveSuccess: "Saved", saveFailed: "Save Failed", umountLabel: "Umount", umountOff: "Unmount", umountOn: "No Unmount" },
-        modules: { title: "Modules", desc: "Toggle Magic Mount (Skip Mount file)", modeAuto: "Default", modeMagic: "Magic", scanning: "Scanning...", reload: "Refresh", save: "Save", empty: "Empty", scanError: "Scan Failed", saveSuccess: "Saved", saveFailed: "Failed", searchPlaceholder: "Search", filterLabel: "Filter", filterAll: "All", toggleError: "Toggle Failed" },
+        modules: { title: "Modules", desc: "Modules strictly managed by Magic Mount.", scanning: "Scanning...", reload: "Refresh", save: "Save", empty: "No magic-mounted modules", scanError: "Scan Failed", saveSuccess: "Saved", saveFailed: "Failed", searchPlaceholder: "Search", filterLabel: "Filter", filterAll: "All", toggleError: "Toggle Failed" },
         logs: { title: "Logs", loading: "Loading...", refresh: "Refresh", empty: "Empty", copy: "Copy", copySuccess: "Copied", copyFail: "Failed", searchPlaceholder: "Search", filterLabel: "Level", levels: { all: "All", info: "Info", warn: "Warn", error: "Error" }, current: "Current", old: "Old", readFailed: "Read Failed", readException: "Exception" }
     };
   },
@@ -55,7 +55,6 @@ export const store = $state({
     setTimeout(() => { this.toast.visible = false; }, 3000);
   },
 
-  // Internal helper to apply theme
   applyTheme() {
     const isDark = this.theme === 'auto' ? this.isSystemDark : this.theme === 'dark';
     const attr = isDark ? 'dark' : 'light';
@@ -88,10 +87,8 @@ export const store = $state({
     const savedLang = localStorage.getItem('mm-lang') || 'en';
     await this.setLang(savedLang);
     
-    // Theme Logic
     this.theme = localStorage.getItem('mm-theme') || 'auto';
     
-    // System dark mode listener
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     this.isSystemDark = mediaQuery.matches;
     
@@ -102,7 +99,6 @@ export const store = $state({
       }
     });
     
-    // Fetch system color for monet
     const sysColor = await API.fetchSystemColor();
     if (sysColor) {
       this.seed = sysColor;
@@ -159,17 +155,7 @@ export const store = $state({
   async loadStatus() {
     this.loading.status = true;
     try {
-      // Parallel fetch: Storage, System Info, Active Mounts
-      const [storageData, sysInfoData, activeMounts] = await Promise.all([
-        API.getStorageUsage(),
-        API.getSystemInfo(),
-        API.getActiveMounts(this.config.mountsource)
-      ]);
-      
-      this.storage = storageData;
-      this.systemInfo = sysInfoData;
-      this.activePartitions = activeMounts;
-
+      this.device = await API.getDeviceStatus();
       if (this.modules.length === 0) {
         await this.loadModules();
       }

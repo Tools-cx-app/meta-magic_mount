@@ -16,13 +16,13 @@
     "logs": "Logs"
   },
   "status": {
-    "storageTitle": "Storage",
-    "storageDesc": "Usage of /data/adb",
+    "deviceTitle": "Device Info",
     "moduleTitle": "Modules",
     "moduleActive": "Active Modules",
-    "modeStats": "Mode Statistics",
-    "modeAuto": "OverlayFS",
-    "modeMagic": "Magic Mount"
+    "modelLabel": "Model",
+    "androidLabel": "Android Ver",
+    "kernelLabel": "Kernel",
+    "selinuxLabel": "SELinux"
   },
   "config": {
     "title": "Configuration",
@@ -49,21 +49,19 @@
     "saveFailed": "Failed to save configuration"
   },
   "modules": {
-    "title": "Module Modes",
-    "desc": "Switch to 'Magic Mount' if a module causes bootloops or issues with the default OverlayFS implementation.",
-    "modeAuto": "OverlayFS",
-    "modeMagic": "Magic Mount",
+    "title": "Active Modules",
+    "desc": "Modules listed here are detected and managed by Magic Mount.",
     "scanning": "Scanning...",
     "reload": "Refresh",
     "save": "Save Changes",
-    "empty": "No modules found",
+    "empty": "No active modules found",
     "scanError": "Failed to scan modules",
-    "saveSuccess": "Module modes saved",
-    "saveFailed": "Failed to save module modes",
+    "saveSuccess": "Saved",
+    "saveFailed": "Failed to save",
     "searchPlaceholder": "Search modules...",
     "filterLabel": "Filter:",
     "filterAll": "All",
-    "toggleError": "Failed to toggle module mode"
+    "toggleError": "Failed to toggle"
   },
   "logs": {
     "title": "System Logs",
@@ -81,7 +79,7 @@
       "error": "Error"
     },
     "copy": "Copy",
-    "copySuccess": "Logs copied to clipboard",
-    "copyFail": "Failed to copy logs"
+    "copySuccess": "Copied to clipboard",
+    "copyFail": "Failed to copy"
   }
 }

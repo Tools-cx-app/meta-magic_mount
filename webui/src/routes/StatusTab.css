@@ -4,57 +4,71 @@
   gap: 16px;
 }
 
-/* Storage Card Styles */
-.storage-card {
+/* Device Info Card (repurposed storage-card) */
+.device-card {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
   border-radius: 16px;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
   box-shadow: var(--md-sys-elevation-1);
 }
 
-.storage-header {
+.device-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
 
-.storage-title {
+.device-title {
   font-size: 14px;
   font-weight: 500;
   opacity: 0.8;
 }
 
-.storage-value {
-  font-size: 32px;
+.device-model {
+  font-size: 20px;
   font-weight: 400;
   font-family: var(--md-ref-typeface-mono);
 }
 
-.progress-track {
-  height: 8px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  width: 100%;
+.device-info-grid {
+  margin-top: 16px; 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 16px;
 }
 
-.progress-fill {
-  height: 100%;
-  background-color: var(--md-sys-color-primary);
-  border-radius: 4px;
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.storage-details {
+.info-item {
   display: flex;
-  justify-content: space-between;
-  font-size: 12px;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 11px;
   opacity: 0.7;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-val {
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.info-val.mono {
   font-family: var(--md-ref-typeface-mono);
+  font-size: 13px;
+  word-break: break-all;
+  opacity: 0.9;
+}
+
+.info-val.warn {
+  color: #ffab91; /* Highlight warning state (light orange) */
+  font-weight: bold;
 }
 
 /* Stats Row */
@@ -91,50 +105,4 @@
 .stat-label {
   font-size: 12px;
   color: var(--md-sys-color-on-surface-variant);
-}
-
-/* Mode Distribution */
-.mode-card {
-  background-color: var(--md-sys-color-surface-container-low);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.mode-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.mode-name {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--md-sys-color-on-surface);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.mode-count {
-  font-weight: 500;
-  color: var(--md-sys-color-on-surface);
-}
-
-.storage-type-badge {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: bold;
-  font-family: var(--md-ref-typeface-mono);
-  text-transform: uppercase;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
 }

@@ -114,6 +114,7 @@ EOF_CONFIG
   },
 
   scanModules: async (moduleDir = DEFAULT_CONFIG.moduledir) => {
+    // Backend strictly filters modules. Only active magic mount modules are returned.
     const cmd = `/data/adb/modules/magic_mount_rs/meta-mm scan --json`;
 
     try {
@@ -126,9 +127,9 @@ EOF_CONFIG
             name: m.name,
             version: m.version,
             description: m.description,
+            // Flags are largely irrelevant now as disabled modules are filtered out by backend
             disabledByFlag: m.disabled,
-            skipMount: m.skip,
-            mode: 'magic'
+            skipMount: m.skip
           }));
         } catch (parseError) {
           console.error("Failed to parse module JSON:", parseError);
@@ -150,23 +151,28 @@ EOF_CONFIG
     throw new Error(stderr || "Log file not found");
   },
 
-  getStorageUsage: async () => {
-    const cmd = `/data/adb/modules/magic_mount_rs/meta-mm storage`;
+  getDeviceStatus: async () => {
+    const cmd = `
+      echo "model=$(getprop ro.product.model)"
+      echo "android=$(getprop ro.build.version.release)"
+      echo "kernel=$(uname -r)"
+      echo "selinux=$(getenforce)"
+    `;
     try {
-      const { errno, stdout, stderr } = await exec(cmd);
+      const { errno, stdout } = await exec(cmd);
       if (errno === 0 && stdout) {
-        try {
-          return JSON.parse(stdout);
-        } catch (e) {
-          console.error("JSON parse error for storage:", e);
+        const lines = stdout.split('\n');
+        const result = {};
+        for (const line of lines) {
+            const [key, val] = line.split('=');
+            if (key && val) result[key.trim()] = val.trim();
         }
-      } else {
-        console.error("Storage command failed:", stderr);
+        return result;
       }
     } catch (e) {
-      console.error("Storage check failed:", e);
+      console.error("Device status fetch failed:", e);
     }
-    return { size: '-', used: '-', percent: '0%', type: 'unknown' };
+    return { model: 'Unknown', android: '-', kernel: '-', selinux: 'Unknown' };
   },
 
   fetchSystemColor: async () => {

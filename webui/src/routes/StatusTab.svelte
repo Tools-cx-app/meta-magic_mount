@@ -10,24 +10,31 @@
 </script>
 
 <div class="dashboard-grid">
-  <div class="storage-card">
-    <div class="storage-header">
+  <div class="device-card">
+    <div class="device-header">
       <div style="display:flex; align-items:center; gap:8px;">
-        <span class="storage-title">{store.L.status.storageTitle}</span>
+        <span class="device-title">{store.L.status.deviceTitle}</span>
       </div>
-      
-      <div class="storage-value">
-        {store.storage.percent}
+      <div class="device-model">
+        {store.device.model}
       </div>
     </div>
     
-    <div class="progress-track">
-      <div class="progress-fill" style="width: {store.storage.percent}"></div>
-    </div>
-
-    <div class="storage-details">
-      <span>{store.L.status.storageDesc}</span>
-      <span>{store.storage.used} / {store.storage.size}</span>
+    <div class="device-info-grid">
+        <div class="info-item">
+            <span class="info-label">{store.L.status.androidLabel}</span>
+            <span class="info-val">{store.device.android}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">{store.L.status.selinuxLabel}</span>
+            <span class="info-val" class:warn={store.device.selinux !== 'Enforcing'}>
+                {store.device.selinux}
+            </span>
+        </div>
+        <div class="info-item" style="grid-column: span 2;">
+            <span class="info-label">{store.L.status.kernelLabel}</span>
+            <span class="info-val mono">{store.device.kernel}</span>
+        </div>
     </div>
   </div>
 
