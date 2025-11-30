@@ -9,13 +9,14 @@ export const store = $state({
   modules: [],
   logs: "", 
   device: { model: 'Loading...', android: '-', kernel: '-', selinux: '-' },
+  version: '...',
   
   loading: { config: false, modules: false, logs: false, status: false },
   saving: { config: false, modules: false },
   toast: { text: '', type: 'info', visible: false },
   
   // Settings
-  theme: 'auto', // 'auto' | 'light' | 'dark'
+  theme: 'auto',
   isSystemDark: false,
   lang: 'en',
   seed: DEFAULT_SEED,
@@ -43,7 +44,7 @@ export const store = $state({
         common: { appName: "Magic Mount", saving: "...", theme: "Theme", language: "Language", themeAuto: "Auto", themeLight: "Light", themeDark: "Dark" },
         lang: { display: "English" },
         tabs: { status: "Status", config: "Config", modules: "Modules", logs: "Logs" },
-        status: { deviceTitle: "Device Info", moduleTitle: "Modules", moduleActive: "Active Modules", modelLabel: "Model", androidLabel: "Android", kernelLabel: "Kernel", selinuxLabel: "SELinux" },
+        status: { deviceTitle: "Device Info", moduleTitle: "Modules", moduleActive: "Active Modules", modelLabel: "Model", androidLabel: "Android Ver", kernelLabel: "Kernel", selinuxLabel: "SELinux", reboot: "Reboot Device", copy: "Copy Info" },
         config: { title: "Config", verboseLabel: "Verbose", verboseOff: "Off", verboseOn: "On", moduleDir: "Module Dir", tempDir: "Temp Dir", mountSource: "Mount Source", logFile: "Log File", partitions: "Partitions", autoPlaceholder: "Auto", reload: "Reload", save: "Save", reset: "Reset", invalidPath: "Invalid path", loadSuccess: "Config Loaded", loadError: "Load Error", loadDefault: "Using Default", saveSuccess: "Saved", saveFailed: "Save Failed", umountLabel: "Umount", umountOff: "Unmount", umountOn: "No Unmount" },
         modules: { title: "Modules", desc: "Modules strictly managed by Magic Mount.", scanning: "Scanning...", reload: "Refresh", save: "Save", empty: "No magic-mounted modules", scanError: "Scan Failed", saveSuccess: "Saved", saveFailed: "Failed", searchPlaceholder: "Search", filterLabel: "Filter", filterAll: "All", toggleError: "Toggle Failed" },
         logs: { title: "Logs", loading: "Loading...", refresh: "Refresh", empty: "Empty", copy: "Copy", copySuccess: "Copied", copyFail: "Failed", searchPlaceholder: "Search", filterLabel: "Level", levels: { all: "All", info: "Info", warn: "Warn", error: "Error" }, current: "Current", old: "Old", readFailed: "Read Failed", readException: "Exception" }
@@ -156,6 +157,7 @@ export const store = $state({
     this.loading.status = true;
     try {
       this.device = await API.getDeviceStatus();
+      this.version = await API.getVersion();
       if (this.modules.length === 0) {
         await this.loadModules();
       }

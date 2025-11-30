@@ -86,16 +86,8 @@ fn main() -> Result<()> {
                 }
                 return Ok(());
             },
-            "storage" => {
-                let check_path = Path::new("/data/adb");
-                let storage = scanner::get_storage_usage(check_path)
-                    .unwrap_or(scanner::StorageInfo {
-                        size: "-".to_string(),
-                        used: "-".to_string(),
-                        percent: "0%".to_string(),
-                    });
-                let json = serde_json::to_string(&storage)?;
-                println!("{json}");
+            "version" => {
+                println!("{{ \"version\": \"{}\" }}", env!("CARGO_PKG_VERSION"));
                 return Ok(());
             },
             _ => {}

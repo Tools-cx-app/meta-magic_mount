@@ -7,17 +7,38 @@
   onMount(() => {
     store.loadStatus();
   });
+
+  function handleReboot() {
+    if (confirm("Reboot device?")) {
+        API.rebootDevice();
+    }
+  }
+
+  function copyDebugInfo() {
+    const info = `Magic Mount v${store.version}\n` +
+                 `Model: ${store.device.model}\n` +
+                 `Android: ${store.device.android}\n` +
+                 `Kernel: ${store.device.kernel}\n` +
+                 `SELinux: ${store.device.selinux}`;
+    navigator.clipboard.writeText(info);
+    store.showToast(store.L.logs.copySuccess, 'success');
+  }
 </script>
 
 <div class="dashboard-grid">
   <div class="device-card">
     <div class="device-header">
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
         <span class="device-title">{store.L.status.deviceTitle}</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span class="device-model">{store.device.model}</span>
+            <span class="version-badge">v{store.version}</span>
+        </div>
       </div>
-      <div class="device-model">
-        {store.device.model}
-      </div>
+      
+      <button class="btn-icon" onclick={copyDebugInfo} title={store.L.status.copy}>
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.copy} fill="currentColor"/></svg>
+      </button>
     </div>
     
     <div class="device-info-grid">
@@ -52,6 +73,9 @@
 
 <div class="bottom-actions">
   <div style="flex:1"></div>
+  <button class="btn-filled" onclick={handleReboot}>
+    {store.L.status.reboot}
+  </button>
   <button 
     class="btn-tonal" 
     onclick={() => store.loadStatus()} 

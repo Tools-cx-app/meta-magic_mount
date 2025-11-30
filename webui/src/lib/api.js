@@ -1,6 +1,8 @@
 import { exec } from 'kernelsu';
 import { DEFAULT_CONFIG, PATHS } from './constants';
 
+// ... (keep helper functions: isTrueValue, stripQuotes, parseKvConfig, serializeKvConfig) ...
+// (Omitting them here to save space, but keep them in your file)
 function isTrueValue(v) {
   const s = String(v).trim().toLowerCase();
   return s === '1' || s === 'true' || s === 'yes' || s === 'on';
@@ -98,7 +100,6 @@ export const API = {
 
   saveConfig: async (config) => {
     const content = serializeKvConfig(config);
-    // Escape single quotes for shell string
     const safeContent = content.replace(/'/g, "'\\''");
     
     const cmd = `
@@ -114,9 +115,7 @@ EOF_CONFIG
   },
 
   scanModules: async (moduleDir = DEFAULT_CONFIG.moduledir) => {
-    // Backend strictly filters modules. Only active magic mount modules are returned.
     const cmd = `/data/adb/modules/magic_mount_rs/meta-mm scan --json`;
-
     try {
       const { errno, stdout, stderr } = await exec(cmd);
       if (errno === 0 && stdout) {
@@ -127,9 +126,9 @@ EOF_CONFIG
             name: m.name,
             version: m.version,
             description: m.description,
-            // Flags are largely irrelevant now as disabled modules are filtered out by backend
             disabledByFlag: m.disabled,
-            skipMount: m.skip
+            skipMount: m.skip,
+            mode: 'magic'
           }));
         } catch (parseError) {
           console.error("Failed to parse module JSON:", parseError);
@@ -173,6 +172,22 @@ EOF_CONFIG
       console.error("Device status fetch failed:", e);
     }
     return { model: 'Unknown', android: '-', kernel: '-', selinux: 'Unknown' };
+  },
+
+  getVersion: async () => {
+    const cmd = `/data/adb/modules/magic_mount_rs/meta-mm version`;
+    try {
+      const { errno, stdout } = await exec(cmd);
+      if (errno === 0 && stdout) {
+        const res = JSON.parse(stdout);
+        return res.version || "0.0.0";
+      }
+    } catch (e) {}
+    return "Unknown";
+  },
+
+  rebootDevice: async () => {
+      await exec(`reboot`);
   },
 
   fetchSystemColor: async () => {

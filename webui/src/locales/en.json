@@ -20,9 +20,11 @@
     "moduleTitle": "Modules",
     "moduleActive": "Active Modules",
     "modelLabel": "Model",
-    "androidLabel": "Android Ver",
+    "androidLabel": "Android",
     "kernelLabel": "Kernel",
-    "selinuxLabel": "SELinux"
+    "selinuxLabel": "SELinux",
+    "reboot": "Reboot Device",
+    "copy": "Copy Info"
   },
   "config": {
     "title": "Configuration",
