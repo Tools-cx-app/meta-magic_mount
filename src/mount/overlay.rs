@@ -1,7 +1,7 @@
 // src/mount/overlay.rs
 // Logic ported and adapted from meta-overlayfs/src/mount.rs
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use log::{info, warn};
 use std::path::{Path, PathBuf};
 
@@ -225,11 +225,5 @@ pub fn mount_overlay(
         }
     }
     
-    Ok(())
-}
-
-fn umount_dir(src: impl AsRef<Path>) -> Result<()> {
-    unmount(src.as_ref(), UnmountFlags::empty())
-        .with_context(|| format!("Failed to umount {}", src.as_ref().display()))?;
     Ok(())
 }
