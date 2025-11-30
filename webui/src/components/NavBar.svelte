@@ -5,13 +5,11 @@
 
   let { activeTab, onTabChange } = $props();
   let showLangMenu = $state(false);
-  
-  // Refs
   let navContainer = $state();
   let langButtonRef = $state();
   let menuRef = $state();
   let tabRefs = $state({});
-
+  
   const TABS = [
     { id: 'status', icon: ICONS.home },
     { id: 'config', icon: ICONS.settings },
@@ -36,7 +34,28 @@
   });
 
   function toggleTheme() {
-    store.setTheme(store.theme === 'light' ? 'dark' : 'light');
+    let nextTheme;
+    let toastMsg;
+
+    if (store.theme === 'auto') {
+      nextTheme = 'light';
+      toastMsg = store.L.common.themeLight;
+    } else if (store.theme === 'light') {
+      nextTheme = 'dark';
+      toastMsg = store.L.common.themeDark;
+    } else {
+      nextTheme = 'auto';
+      toastMsg = store.L.common.themeAuto;
+    }
+
+    store.setTheme(nextTheme);
+    store.showToast(toastMsg, 'info');
+  }
+
+  function getThemeIcon() {
+    if (store.theme === 'auto') return ICONS.auto_mode;
+    if (store.theme === 'light') return ICONS.light_mode;
+    return ICONS.dark_mode;
   }
 
   function setLang(code) {
@@ -61,7 +80,7 @@
     <h1 class="screen-title">{store.L.common.appName}</h1>
     <div class="top-actions">
       <button class="btn-icon" onclick={toggleTheme} title={store.L.common.theme}>
-        <svg viewBox="0 0 24 24"><path d={store.theme === 'light' ? ICONS.dark_mode : ICONS.light_mode} fill="currentColor"/></svg>
+        <svg viewBox="0 0 24 24"><path d={getThemeIcon()} fill="currentColor"/></svg>
       </button>
       <button 
         class="btn-icon" 

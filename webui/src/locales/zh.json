@@ -3,8 +3,9 @@
   "common": {
     "appName": "Magic Mount",
     "saving": "保存中...",
-    "theme": "切换主题",
-    "language": "语言"
+    "themeAuto": "自动 (跟随系统)",
+    "themeLight": "浅色模式",
+    "themeDark": "深色模式"
   },
   "tabs": {
     "status": "状态",

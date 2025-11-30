@@ -14,7 +14,9 @@ export const store = $state({
   saving: { config: false, modules: false },
   toast: { text: '', type: 'info', visible: false },
   
-  theme: 'dark',
+  // Settings
+  theme: 'auto', // 'auto' | 'light' | 'dark'
+  isSystemDark: false,
   lang: 'en',
   seed: DEFAULT_SEED,
   loadedLocale: null,
@@ -38,7 +40,7 @@ export const store = $state({
 
   getFallbackLocale() {
     return {
-        common: { appName: "Magic Mount", saving: "Saving...", theme: "Theme", language: "Language" },
+        common: { appName: "Hybrid Mount", saving: "...", theme: "Theme", language: "Language", themeAuto: "Auto", themeLight: "Light", themeDark: "Dark" },
         lang: { display: "English" },
         tabs: { status: "Status", config: "Config", modules: "Modules", logs: "Logs" },
         status: { storageTitle: "Storage", storageDesc: "/data/adb usage", moduleTitle: "Modules", moduleActive: "Active", modeStats: "Stats", modeAuto: "Auto", modeMagic: "Magic" },
@@ -53,11 +55,18 @@ export const store = $state({
     setTimeout(() => { this.toast.visible = false; }, 3000);
   },
 
+  // Internal helper to apply theme
+  applyTheme() {
+    const isDark = this.theme === 'auto' ? this.isSystemDark : this.theme === 'dark';
+    const attr = isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', attr);
+    Monet.apply(this.seed, isDark);
+  },
+
   setTheme(newTheme) {
     this.theme = newTheme;
-    document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('mm-theme', newTheme);
-    Monet.apply(this.seed, newTheme === 'dark');
+    this.applyTheme();
   },
 
   async setLang(code) {
@@ -79,16 +88,27 @@ export const store = $state({
     const savedLang = localStorage.getItem('mm-lang') || 'en';
     await this.setLang(savedLang);
     
-    const savedTheme = localStorage.getItem('mm-theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    this.setTheme(savedTheme || (systemDark ? 'dark' : 'light'));
-
+    // Theme Logic
+    this.theme = localStorage.getItem('mm-theme') || 'auto';
+    
+    // System dark mode listener
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    this.isSystemDark = mediaQuery.matches;
+    
+    mediaQuery.addEventListener('change', (e) => {
+      this.isSystemDark = e.matches;
+      if (this.theme === 'auto') {
+        this.applyTheme();
+      }
+    });
+    
+    // Fetch system color for monet
     const sysColor = await API.fetchSystemColor();
     if (sysColor) {
       this.seed = sysColor;
-      Monet.apply(this.seed, this.theme === 'dark');
     }
-
+    
+    this.applyTheme();
     await this.loadConfig();
   },
 
@@ -139,7 +159,17 @@ export const store = $state({
   async loadStatus() {
     this.loading.status = true;
     try {
-      this.storage = await API.getStorageUsage();
+      // Parallel fetch: Storage, System Info, Active Mounts
+      const [storageData, sysInfoData, activeMounts] = await Promise.all([
+        API.getStorageUsage(),
+        API.getSystemInfo(),
+        API.getActiveMounts(this.config.mountsource)
+      ]);
+      
+      this.storage = storageData;
+      this.systemInfo = sysInfoData;
+      this.activePartitions = activeMounts;
+
       if (this.modules.length === 0) {
         await this.loadModules();
       }

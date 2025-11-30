@@ -4,7 +4,10 @@
     "appName": "Magic Mount",
     "saving": "Saving...",
     "theme": "Toggle Theme",
-    "language": "Language"
+    "language": "Language",
+    "themeAuto": "Auto (System)",
+    "themeLight": "Light Mode",
+    "themeDark": "Dark Mode"
   },
   "tabs": {
     "status": "Status",
