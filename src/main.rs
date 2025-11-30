@@ -15,7 +15,6 @@ mod scanner;
 mod utils;
 
 use std::io::Write;
-use std::path::Path;
 
 use anyhow::{Context, Result};
 use env_logger::Builder;
