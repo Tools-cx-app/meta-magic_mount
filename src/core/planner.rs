@@ -23,6 +23,7 @@ pub struct MountPlan {
 }
 
 /// Generates a mount plan based on the inventory and current storage state.
+/// The storage_root contains the SYNCED module files.
 pub fn generate(
     config: &config::Config, 
     modules: &[Module], 
@@ -44,11 +45,12 @@ pub fn generate(
         let content_path = storage_root.join(&module.id);
         
         if !content_path.exists() {
-            log::debug!("Planner: Module {} content missing (sync failed?), skipping", module.id);
+            log::debug!("Planner: Module {} content missing, skipping", module.id);
             continue;
         }
 
         if module.mode == "magic" {
+            // Force Magic Mount
             if has_meaningful_content(&content_path, &target_partitions) {
                 magic_paths.insert(content_path);
                 magic_ids.insert(module.id.clone());
@@ -70,16 +72,31 @@ pub fn generate(
             if participates_in_overlay {
                 overlay_ids.insert(module.id.clone());
             } else {
+                // If it has content but not in standard partitions, check magic fallback
                 if has_meaningful_content(&content_path, &target_partitions) {
-                     // Fallback logic could go here
+                     // Fallback logic if needed
                 }
             }
         }
     }
 
+    // Construct Overlay Operations
     for (part, layers) in partition_layers {
+        let target_path = format!("/{}", part);
+        let target = Path::new(&target_path);
+        
+        if target.read_link().is_ok() {
+            log::info!("Planner: Skipping {} because it is a symlink", target_path);
+            continue;
+        }
+
+        // Double check if target exists and is a directory
+        if !target.is_dir() {
+            continue;
+        }
+
         plan.overlay_ops.push(OverlayOperation {
-            target: format!("/{}", part),
+            target: target_path,
             lowerdirs: layers,
         });
     }
@@ -88,6 +105,7 @@ pub fn generate(
     plan.overlay_module_ids = overlay_ids.into_iter().collect();
     plan.magic_module_ids = magic_ids.into_iter().collect();
 
+    // Sort IDs for consistent reporting
     plan.overlay_module_ids.sort();
     plan.magic_module_ids.sort();
 
