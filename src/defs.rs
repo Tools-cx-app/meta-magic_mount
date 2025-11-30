@@ -3,7 +3,8 @@
 // Hybrid Mount Constants
 
 // NOTE: The actual content directory is now determined dynamically at runtime.
-pub const FALLBACK_CONTENT_DIR: &str = "/data/adb/meta-hybrid/mnt/";
+// Relocated to 'img_mnt' to avoid conflicts and improve clarity
+pub const FALLBACK_CONTENT_DIR: &str = "/data/adb/meta-hybrid/img_mnt/";
 
 // The base directory for our own config and logs
 pub const BASE_DIR: &str = "/data/adb/meta-hybrid/";

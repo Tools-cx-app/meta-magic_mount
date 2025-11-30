@@ -1,5 +1,5 @@
 #!/system/bin/sh
-MNT_DIR="/data/adb/meta-hybrid/mnt"
+MNT_DIR="/data/adb/meta-hybrid/img_mnt"
 
 if [ -z "$MODULE_ID" ]; then
     exit 0

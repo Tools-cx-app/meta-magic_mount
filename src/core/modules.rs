@@ -4,7 +4,6 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde::Serialize;
-// Adjusted imports: state is now in core
 use crate::{conf::config, defs, utils, core::state};
 
 #[derive(Serialize)]
@@ -29,6 +28,30 @@ fn read_prop(path: &Path, key: &str) -> Option<String> {
     None
 }
 
+// Check if a directory recursively contains any files (or symlinks/devices)
+// Returns true if at least one non-directory entry is found.
+fn has_files_recursive(path: &Path) -> bool {
+    if let Ok(entries) = fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let file_type = match entry.file_type() {
+                Ok(ft) => ft,
+                Err(_) => continue,
+            };
+
+            // If it's a directory, recurse. 
+            // If it's a file or symlink (or block/char device), it counts as content.
+            if file_type.is_dir() {
+                if has_files_recursive(&entry.path()) {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: usize, magic_count: usize) {
     let path = Path::new(defs::MODULE_PROP_FILE);
     if !path.exists() { 
@@ -36,19 +59,16 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
         return; 
     }
 
-    // Catgirl Style Formatter
     let mode_str = if storage_mode == "tmpfs" { "Tmpfs" } else { "Ext4" };
     let status_emoji = if storage_mode == "tmpfs" { "🐾" } else { "💿" };
     
     let nuke_str = if nuke_active { " | 肉垫: 开启 ✨" } else { "" };
     
-    // Construct the cute string
     let new_desc = format!(
         "description=😋 运行中喵～ ({}) {} | Overlay: {} | Magic: {}{}", 
         mode_str, status_emoji, overlay_count, magic_count, nuke_str
     );
 
-    // Read and replace
     let mut new_lines = Vec::new();
     match fs::read_to_string(path) {
         Ok(content) => {
@@ -59,7 +79,6 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
                     new_lines.push(line.to_string());
                 }
             }
-            // Write back
             if let Err(e) = fs::write(path, new_lines.join("\n")) {
                 log::error!("Failed to update module.prop: {}", e);
             } else {
@@ -85,28 +104,51 @@ pub fn scan_enabled_ids(metadata_dir: &Path) -> Result<Vec<String>> {
     Ok(ids)
 }
 
+/// Recursively fix SELinux contexts of a module by mirroring from the real system.
+fn repair_contexts(module_root: &Path, current_path: &Path) -> Result<()> {
+    if !current_path.exists() { return Ok(()); }
+    let relative = current_path.strip_prefix(module_root)?;
+    let system_path = Path::new("/").join(relative);
+    if system_path.exists() {
+        if let Err(e) = utils::copy_path_context(&system_path, current_path) {
+            log::debug!("Failed to mirror context for {}: {}", relative.display(), e);
+        }
+    } else {
+        // If system path doesn't exist, rely on initial copy or inheritance
+    }
+
+    if current_path.is_dir() {
+        for entry in fs::read_dir(current_path)? {
+            let entry = entry?;
+            repair_contexts(module_root, &entry.path())?;
+        }
+    }
+    Ok(())
+}
+
 pub fn sync_active(source_dir: &Path, target_base: &Path) -> Result<()> {
     log::info!("Syncing modules from {} to {}", source_dir.display(), target_base.display());
     let ids = scan_enabled_ids(source_dir)?;
     log::debug!("Found {} enabled modules to sync.", ids.len());
     
-    // 1. Prune stale modules from storage (e.g. from modules.img)
+    // 1. Wipe storage completely (Force clean start)
     if target_base.exists() {
+        log::info!("Wiping storage for fresh sync...");
         for entry in fs::read_dir(target_base)? {
             let entry = entry?;
             let path = entry.path();
-            if !path.is_dir() { continue; }
+            let name = entry.file_name().to_string_lossy().to_string();
             
-            let id = entry.file_name().to_string_lossy().to_string();
-            
-            // Skip ext4 system folder and self
-            if id == "lost+found" || id == "meta-hybrid" { continue; }
+            // Preserve lost+found (fsck) and meta-hybrid (internal)
+            if name == "lost+found" || name == "meta-hybrid" { continue; }
 
-            // If module is not in the enabled list, remove it from storage
-            if !ids.contains(&id) {
-                log::info!("Pruning stale/disabled module from storage: {}", id);
+            if path.is_dir() {
                 if let Err(e) = fs::remove_dir_all(&path) {
-                    log::warn!("Failed to remove stale module {}: {}", id, e);
+                    log::warn!("Failed to wipe directory {}: {}", name, e);
+                }
+            } else {
+                if let Err(e) = fs::remove_file(&path) {
+                    log::warn!("Failed to wipe file {}: {}", name, e);
                 }
             }
         }
@@ -116,12 +158,33 @@ pub fn sync_active(source_dir: &Path, target_base: &Path) -> Result<()> {
     for id in ids {
         let src = source_dir.join(&id);
         let dst = target_base.join(&id);
-        let has_content = defs::BUILTIN_PARTITIONS.iter().any(|p| src.join(p).exists());
+        
+        // Check if any partition directory has ACTUAL files inside recursively
+        let has_content = defs::BUILTIN_PARTITIONS.iter().any(|p| {
+            let part_path = src.join(p);
+            part_path.exists() && has_files_recursive(&part_path)
+        });
+        
         if has_content {
             log::debug!("Syncing module: {}", id);
+            // Native cp_r will create the destination dir
             if let Err(e) = utils::sync_dir(&src, &dst) {
                 log::error!("Failed to sync module {}: {}", id, e);
+            } else {
+                // 3. Context Mirroring Pass
+                log::debug!("Repairing SELinux contexts for {}", id);
+                for part in defs::BUILTIN_PARTITIONS {
+                    let part_root = dst.join(part);
+                    if part_root.exists() {
+                        if let Err(e) = repair_contexts(&dst, &part_root) {
+                            log::warn!("Context repair failed for {}/{}: {}", id, part, e);
+                        }
+                    }
+                }
             }
+        } else {
+            // Module is empty, since we wiped storage, we just do nothing.
+            log::debug!("Skipping sync for empty module: {}", id);
         }
     }
     Ok(())
@@ -132,7 +195,6 @@ pub fn print_list(config: &config::Config) -> Result<()> {
     let modules_dir = &config.moduledir;
     let mut modules = Vec::new();
 
-    // Load from state file
     let state = state::RuntimeState::load().unwrap_or_default();
     
     let mut mnt_base = PathBuf::from(defs::FALLBACK_CONTENT_DIR);
@@ -149,8 +211,13 @@ pub fn print_list(config: &config::Config) -> Result<()> {
             if id == "meta-hybrid" || id == "lost+found" { continue; }
             if path.join(defs::DISABLE_FILE_NAME).exists() || path.join(defs::REMOVE_FILE_NAME).exists() || path.join(defs::SKIP_MOUNT_FILE_NAME).exists() { continue; }
 
+            // Check content recursively to match sync_active logic
+            // We check both source (if not mounted yet) and destination (if mounted)
             let has_content = defs::BUILTIN_PARTITIONS.iter().any(|p| {
-                path.join(p).exists() || mnt_base.join(&id).join(p).exists()
+                let p_src = path.join(p);
+                let p_dst = mnt_base.join(&id).join(p);
+                (p_src.exists() && has_files_recursive(&p_src)) || 
+                (p_dst.exists() && has_files_recursive(&p_dst))
             });
 
             if has_content {
