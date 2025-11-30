@@ -11,6 +11,7 @@
 mod config;
 mod defs;
 mod magic_mount;
+mod scanner;
 mod utils;
 
 use std::io::Write;
@@ -21,7 +22,7 @@ use mimalloc::MiMalloc;
 
 use crate::{
     config::Config,
-    defs::{CONFIG_FILE_DEFAULT, DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
+    defs::CONFIG_FILE_DEFAULT,
     magic_mount::UMOUNT,
 };
 
@@ -30,7 +31,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 fn load_config() -> Config {
     if let Ok(config) = Config::load_default() {
-        log::info!("Loaded config from default location: {CONFIG_FILE_DEFAULT}",);
+        log::info!("Loaded config from default location: {CONFIG_FILE_DEFAULT}");
         return config;
     }
 
@@ -62,41 +63,29 @@ fn init_logger(verbose: bool) {
 }
 
 fn main() -> Result<()> {
-    // 加载配置
+    
     let config = load_config();
 
     let args: Vec<_> = std::env::args().collect();
+
     if args.len() > 1 && args[1] == "scan" {
-        let mut modules = Vec::new();
-        for entry in config.moduledir.read_dir()?.flatten() {
-            if !entry.file_type()?.is_dir() {
-                continue;
+        let json_output = args.len() > 2 && args[2] == "--json";
+        
+        let modules = scanner::scan_modules(&config.moduledir)?;
+
+        if json_output {
+            let json = serde_json::to_string(&modules)?;
+            println!("{json}");
+        } else {
+            for module in modules {
+                if !module.disabled && !module.skip {
+                    println!("{}", module.id);
+                }
             }
-
-            if entry.path().join(DISABLE_FILE_NAME).exists()
-                || entry.path().join(REMOVE_FILE_NAME).exists()
-                || entry.path().join(SKIP_MOUNT_FILE_NAME).exists()
-            {
-                continue;
-            }
-
-            let mod_system = entry.path().join("system");
-            if !mod_system.is_dir() {
-                continue;
-            }
-
-            log::debug!("collecting {}", entry.path().display());
-
-            modules.push(entry.file_name().into_string().unwrap());
-            //        has_file |= system.collect_module_files(&mod_system)?;
-        }
-
-        for module in modules {
-            println!("{module}");
         }
         return Ok(());
     }
-    // 初始化日志
+
     init_logger(config.verbose);
 
     log::info!("Magic Mount Starting");

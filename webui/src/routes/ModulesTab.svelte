@@ -91,9 +91,11 @@
                     Module is disabled or removed via KernelSU manager.
                 </p>
             {/if}
-            <p class="module-meta">
-              Mode: {mod.skipMount ? store.L.modules.modeAuto : store.L.modules.modeMagic}
-            </p>
+            {#if mod.skipMount}
+                <p style="color: var(--md-sys-color-on-surface-variant); font-size: 12px; opacity: 0.7;">
+                    Skipped by skip_mount flag.
+                </p>
+            {/if}
           </div>
         {/if}
       </div>

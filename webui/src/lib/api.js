@@ -1,7 +1,6 @@
 import { exec } from 'kernelsu';
 import { DEFAULT_CONFIG, PATHS } from './constants';
 
-// Helpers for Config Parsing
 function isTrueValue(v) {
   const s = String(v).trim().toLowerCase();
   return s === '1' || s === 'true' || s === 'yes' || s === 'on';
@@ -29,22 +28,17 @@ function parseKvConfig(text) {
       let key = line.slice(0, eqIndex).trim();
       let value = line.slice(eqIndex + 1).trim();
       if (!key || !value) continue;
-
-      // Handle brackets for arrays (simple logic)
       if (value.startsWith('[') && value.endsWith(']')) {
          value = value.slice(1, -1);
          if (!value.trim()) {
-             // empty array
              if (key === 'partitions') result.partitions = [];
              continue;
          }
-         // split by comma, remove quotes
          const parts = value.split(',').map(s => stripQuotes(s.trim()));
          if (key === 'partitions') result.partitions = parts;
          continue;
       }
 
-      // Handle simple values
       const rawValue = value;
       value = stripQuotes(value);
 
@@ -120,59 +114,27 @@ EOF_CONFIG
   },
 
   scanModules: async (moduleDir = DEFAULT_CONFIG.moduledir) => {
-    // Shell script to scan modules and get simple status
-    const cmd = `
-      MOD_DIR="${moduleDir}"
-      [ -d "$MOD_DIR" ] || exit 0
-      modules=$(/data/adb/modules/magic_mount_rs/meta-mm scan)
-      for m in "$MOD_DIR"/*; do
-        [ -d "$m" ] || continue
-        # Basic check if it's a module
-        [ -f "$m/module.prop" ] || continue
-        
-        name=$(basename "$m")
-        
-        if ! echo "$modules" | grep -q "^$name$"; then
-          continue
-        fi
-        
-        # Read props roughly
-        prop_name=$(grep "^name=" "$m/module.prop" | cut -d= -f2-)
-        prop_ver=$(grep "^version=" "$m/module.prop" | cut -d= -f2-)
-        prop_desc=$(grep "^description=" "$m/module.prop" | cut -d= -f2-)
-        
-        disabled=0
-        skip=0
-        
-        if [ -f "$m/disable" ] || [ -f "$m/remove" ]; then
-          disabled=1
-        fi
-        
-        if [ -f "$m/skip_mount" ]; then
-          skip=1
-        fi
-        
-        # Output delimiter separated
-        printf "%s|%s|%s|%s|%s|%s\\n" "$name" "$disabled" "$skip" "$prop_name" "$prop_ver" "$prop_desc"
-      done
-    `;
+    const cmd = `/data/adb/modules/magic_mount_rs/meta-mm scan --json`;
 
     try {
-      const { errno, stdout } = await exec(cmd);
+      const { errno, stdout, stderr } = await exec(cmd);
       if (errno === 0 && stdout) {
-        return stdout.split('\n').filter(l => l.trim()).map(line => {
-          const [id, disabledStr, skipStr, name, version, description] = line.split('|');
-          return {
-            id,
-            name: name || id,
-            version: version || '',
-            description: description || '',
-            disabledByFlag: disabledStr === '1',
-            skipMount: skipStr === '1',
-            // Mapping for UI logic
-            mode: (skipStr === '1') ? 'magic' : 'auto' 
-          };
-        });
+        try {
+          const rawModules = JSON.parse(stdout);
+          return rawModules.map(m => ({
+            id: m.id,
+            name: m.name,
+            version: m.version,
+            description: m.description,
+            disabledByFlag: m.disabled,
+            skipMount: m.skip
+          }));
+        } catch (parseError) {
+          console.error("Failed to parse module JSON:", parseError);
+          return [];
+        }
+      } else {
+        console.error("Scan command failed:", stderr);
       }
     } catch (e) {
       console.error("Scan modules error:", e);
@@ -180,16 +142,8 @@ EOF_CONFIG
     return [];
   },
 
-  toggleSkipMount: async (moduleId, shouldSkip, moduleDir = DEFAULT_CONFIG.moduledir) => {
-    const target = `${moduleDir}/${moduleId}/skip_mount`;
-    const cmd = shouldSkip ? `touch "${target}"` : `rm -f "${target}"`;
-    const { errno, stderr } = await exec(cmd);
-    if (errno !== 0) throw new Error(stderr);
-  },
-
   readLogs: async (logPath = PATHS.LOG_FILE, lines = 1000) => {
-    // FIX: Using cat instead of tail for better compatibility
-    const cmd = `[ -f "${logPath}" ] && cat "${logPath}" || echo ""`;
+    const cmd = `[ -f "${logPath}" ] && tail -n ${lines} "${logPath}" || echo ""`;
     const { errno, stdout, stderr } = await exec(cmd);
     if (errno === 0) return stdout || "";
     throw new Error(stderr || "Log file not found");
@@ -197,18 +151,15 @@ EOF_CONFIG
 
   getStorageUsage: async () => {
     try {
-      // Use df to check /data/adb/modules usage
       const { errno, stdout } = await exec(`df -h /data/adb | tail -n 1`);
       if (errno === 0 && stdout) {
         const parts = stdout.trim().split(/\s+/);
-        // Filesystem Size Used Avail Use% Mounted on
-        // We assume standard output format
         if (parts.length >= 5) {
             return {
                 size: parts[1],
                 used: parts[2],
                 percent: parts[4],
-                type: 'ext4' // Assuming standard install
+                type: 'ext4'
             };
         }
       }

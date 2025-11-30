@@ -2,21 +2,18 @@ import { API } from './api';
 import { DEFAULT_CONFIG, DEFAULT_SEED } from './constants';
 import { Monet } from './theme';
 
-// Eager load locales
 const localeModules = import.meta.glob('../locales/*.json', { eager: true });
 
 export const store = $state({
   config: { ...DEFAULT_CONFIG },
   modules: [],
-  logs: "", // Changed: logs is now a simple string
+  logs: "", 
   storage: { used: '-', size: '-', percent: '0%', type: 'unknown' },
   
-  // UI State
   loading: { config: false, modules: false, logs: false, status: false },
   saving: { config: false, modules: false },
   toast: { text: '', type: 'info', visible: false },
   
-  // Settings
   theme: 'dark',
   lang: 'en',
   seed: DEFAULT_SEED,
@@ -40,7 +37,6 @@ export const store = $state({
   },
 
   getFallbackLocale() {
-    // Basic fallback to prevent crash
     return {
         common: { appName: "Magic Mount", saving: "Saving...", theme: "Theme", language: "Language" },
         lang: { display: "English" },
@@ -50,16 +46,6 @@ export const store = $state({
         modules: { title: "Modules", desc: "Toggle Magic Mount (Skip Mount file)", modeAuto: "Default", modeMagic: "Magic", scanning: "Scanning...", reload: "Refresh", save: "Save", empty: "Empty", scanError: "Scan Failed", saveSuccess: "Saved", saveFailed: "Failed", searchPlaceholder: "Search", filterLabel: "Filter", filterAll: "All", toggleError: "Toggle Failed" },
         logs: { title: "Logs", loading: "Loading...", refresh: "Refresh", empty: "Empty", copy: "Copy", copySuccess: "Copied", copyFail: "Failed", searchPlaceholder: "Search", filterLabel: "Level", levels: { all: "All", info: "Info", warn: "Warn", error: "Error" }, current: "Current", old: "Old", readFailed: "Read Failed", readException: "Exception" }
     };
-  },
-
-  get modeStats() {
-    let auto = 0;
-    let magic = 0;
-    this.modules.forEach(m => {
-      if (m.skipMount) magic++;
-      else auto++;
-    });
-    return { auto, magic };
   },
 
   showToast(msg, type = 'info') {
@@ -136,17 +122,6 @@ export const store = $state({
       this.showToast(this.L.modules.scanError, 'error');
     }
     this.loading.modules = false;
-  },
-
-  async toggleModuleMode(moduleId, currentSkip) {
-      try {
-          await API.toggleSkipMount(moduleId, !currentSkip, this.config.moduledir);
-          this.modules = this.modules.map(m => 
-              m.id === moduleId ? { ...m, skipMount: !currentSkip, mode: (!currentSkip ? 'magic' : 'auto') } : m
-          );
-      } catch (e) {
-          this.showToast(this.L.modules.toggleError, 'error');
-      }
   },
 
   async loadLogs(silent = false) {
