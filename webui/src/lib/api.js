@@ -1,8 +1,6 @@
 import { exec } from 'kernelsu';
 import { DEFAULT_CONFIG, PATHS } from './constants';
 
-// ... (keep helper functions: isTrueValue, stripQuotes, parseKvConfig, serializeKvConfig) ...
-// (Omitting them here to save space, but keep them in your file)
 function isTrueValue(v) {
   const s = String(v).trim().toLowerCase();
   return s === '1' || s === 'true' || s === 'yes' || s === 'on';
@@ -100,7 +98,7 @@ export const API = {
 
   saveConfig: async (config) => {
     const content = serializeKvConfig(config);
-    const safeContent = content.replace(/'/g, "'\\''");
+    // const safeContent = content.replace(/'/g, "'\\''");
     
     const cmd = `
       mkdir -p "$(dirname "${PATHS.CONFIG}")"
@@ -188,6 +186,11 @@ EOF_CONFIG
 
   rebootDevice: async () => {
       await exec(`reboot`);
+  },
+  openLink: async (url) => {
+    const safeUrl = url.replace(/"/g, '\\"');
+    const cmd = `am start -a android.intent.action.VIEW -d "${safeUrl}"`;
+    await exec(cmd);
   },
 
   fetchSystemColor: async () => {

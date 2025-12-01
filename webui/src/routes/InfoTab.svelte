@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { store } from '../lib/store.svelte';
+  import { API } from '../lib/api';
   import { ICONS } from '../lib/constants';
   import './InfoTab.css';
   import Skeleton from '../components/Skeleton.svelte';
@@ -52,6 +53,11 @@
       loading = false;
     }
   }
+
+  function handleLink(e, url) {
+    e.preventDefault();
+    API.openLink(url);
+  }
 </script>
 
 <div class="info-container">
@@ -65,11 +71,15 @@
   </div>
 
   <div class="action-grid">
-    <a href={`https://github.com/${REPO_OWNER}/${REPO_NAME}`} target="_blank" class="action-card">
+    <a href={`https://github.com/${REPO_OWNER}/${REPO_NAME}`} 
+       class="action-card"
+       onclick={(e) => handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`)}>
         <svg viewBox="0 0 24 24" class="action-icon"><path d={ICONS.github} /></svg>
         <span class="action-label">{store.L.info.projectLink}</span>
     </a>
-    <a href={DONATE_LINK} target="_blank" class="action-card">
+    <a href={DONATE_LINK} 
+       class="action-card"
+       onclick={(e) => handleLink(e, DONATE_LINK)}>
         <svg viewBox="0 0 24 24" class="action-icon" style="fill: #ffab91;"><path d={ICONS.donate} /></svg>
         <span class="action-label">{store.L.info.donate}</span>
     </a>
@@ -95,7 +105,9 @@
             </div>
         {:else}
             {#each contributors as user}
-                <a href={user.html_url} target="_blank" class="contributor-bar">
+                <a href={user.html_url} 
+                   class="contributor-bar"
+                   onclick={(e) => handleLink(e, user.html_url)}>
                     <img src={user.avatar_url} alt={user.login} class="c-avatar" />
                     <div class="c-info">
                         <span class="c-name">{user.name || user.login}</span>
