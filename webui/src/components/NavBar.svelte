@@ -14,7 +14,8 @@
     { id: 'status', icon: ICONS.home },
     { id: 'config', icon: ICONS.settings },
     { id: 'modules', icon: ICONS.modules },
-    { id: 'logs', icon: ICONS.description }
+    { id: 'logs', icon: ICONS.description },
+    { id: 'info', icon: ICONS.info }
   ];
 
   // Auto scroll active tab into view

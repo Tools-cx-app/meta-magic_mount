@@ -6,28 +6,28 @@
   import NavBar from './components/NavBar.svelte';
   import Toast from './components/Toast.svelte';
   
-  // NOTE: These components will be implemented in the next step.
-  // The build may fail temporarily until they are created.
   import StatusTab from './routes/StatusTab.svelte';
   import ConfigTab from './routes/ConfigTab.svelte';
   import ModulesTab from './routes/ModulesTab.svelte';
   import LogsTab from './routes/LogsTab.svelte';
+  import InfoTab from './routes/InfoTab.svelte';
 
   import './app.css';
   import './layout.css';
-  
+
   // Default tab is 'status'
   let activeTab = $state('status');
   let transitionDirection = $state(1);
   let touchStartX = 0;
   let touchEndX = 0;
 
-  const TABS = ['status', 'config', 'modules', 'logs'];
+  const TABS = ['status', 'config', 'modules', 'logs', 'info'];
 
   function switchTab(id) {
     const currentIndex = TABS.indexOf(activeTab);
     const newIndex = TABS.indexOf(id);
     if (currentIndex === newIndex) return;
+    
     transitionDirection = newIndex > currentIndex ? 1 : -1;
     activeTab = id;
   }
@@ -73,6 +73,8 @@
           <ModulesTab />
         {:else if activeTab === 'logs'}
           <LogsTab />
+        {:else if activeTab === 'info'}
+          <InfoTab />
         {/if}
       </div>
     {/key}
