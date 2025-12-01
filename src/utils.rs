@@ -34,9 +34,7 @@ const SELINUX_XATTR: &str = "security.selinux";
 const XATTR_TEST_FILE: &str = ".xattr_test";
 const DEFAULT_CONTEXT: &str = "u:object_r:system_file:s0";
 
-// --- Advanced Logging System ---
 
-/// A simple formatter to enforce "[LEVEL] Message" format without timestamps.
 struct SimpleFormatter;
 
 impl<S, N> FormatEvent<S, N> for SimpleFormatter
@@ -51,19 +49,13 @@ where
         event: &Event<'_>,
     ) -> std_fmt::Result {
         let level = *event.metadata().level();
-        // Write level in brackets, e.g., "[INFO] "
         write!(writer, "[{}] ", level)?;
-        
-        // Write the actual log message (and other fields if any)
-        // Fixed: Use ctx.format_fields which handles the writer and event correctly
-        ctx.format_fields(writer, event)
+        ctx.field_format().format_fields(writer.by_ref(), event)?;
+        writeln!(writer)
     }
 }
 
-/// Initializes the tracing logging system.
-/// Returns a WorkerGuard that MUST be held by the main function to ensure logs are flushed.
 pub fn init_logging(verbose: bool, log_path: &Path) -> Result<WorkerGuard> {
-    // 1. Setup file appender (non-blocking for performance, but safe)
     if let Some(parent) = log_path.parent() {
         create_dir_all(parent)?;
     }
@@ -83,7 +75,6 @@ pub fn init_logging(verbose: bool, log_path: &Path) -> Result<WorkerGuard> {
     };
 
     // 3. Setup formatting layer for file
-    // Use our SimpleFormatter to ensure [INFO] is at the start and timestamps are gone.
     let file_layer = fmt::layer()
         .with_ansi(false)
         .with_writer(non_blocking)
@@ -96,11 +87,9 @@ pub fn init_logging(verbose: bool, log_path: &Path) -> Result<WorkerGuard> {
         .init();
 
     // 5. Redirect standard `log` macros to `tracing`
-    // This allows us to keep using log::info! in other modules
     tracing_log::LogTracer::init().ok();
 
     // 6. Install Panic Hook
-    // This captures panic info and writes it to the log file before crashing
     let log_path_buf = log_path.to_path_buf();
     std::panic::set_hook(Box::new(move |info| {
         let msg = match info.payload().downcast_ref::<&str>() {
@@ -112,11 +101,7 @@ pub fn init_logging(verbose: bool, log_path: &Path) -> Result<WorkerGuard> {
         };
         
         let location = info.location().map(|l| format!("{}:{}", l.file(), l.line())).unwrap_or_default();
-        
-        // Format changed to [ERROR] so WebUI can filter it
         let error_msg = format!("\n[ERROR] PANIC: Thread crashed at {}: {}\n", location, msg);
-        
-        // Use standard fs write to ensure it hits disk even if tracing channel is clogged
         if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path_buf) {
             let _ = writeln!(file, "{}", error_msg);
         }
@@ -169,7 +154,6 @@ pub fn copy_path_context<S: AsRef<Path>, D: AsRef<Path>>(src: S, dst: D) -> Resu
 
 pub fn ensure_dir_exists<T: AsRef<Path>>(dir: T) -> Result<()> {
     if !dir.as_ref().exists() {
-        // log::debug might not be available yet if called before init, but that's fine
         create_dir_all(&dir)?;
     }
     Ok(())
