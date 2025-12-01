@@ -25,7 +25,7 @@ struct CargoConfig {
 
 #[derive(Serialize)]
 struct UpdateJson {
-    verion: String,
+    version: String,
     #[serde(rename = "versionCode")]
     versioncode: usize,
     #[serde(rename = "zipUrl")]
@@ -66,7 +66,7 @@ fn cal_version_code(version: &str) -> Result<usize> {
         .ok_or_else(|| anyhow::anyhow!("Invalid version format"))?;
     let patch: usize = patch.parse()?;
 
-    // 版本号计算规则：主版本 * 100000 + 次版本 * 1000 + 修订版本
+    // Version code rule: Major * 100000 + Minor * 1000 + Patch
     Ok(manjor * 100000 + minor * 1000 + patch)
 }
 
@@ -78,7 +78,8 @@ fn update() -> Result<()> {
 
     let json = UpdateJson {
         versioncode: cal_version_code(&data.package.version)?,
-        verion: data.package.version.clone(),
+        // Fixed typo here as well
+        version: data.package.version.clone(),
         zipurl: format!(
             "https://github.com/Tools-cx-app/meta-magic_mount/releases/download/v{}/magic_mount_rs.zip",
             data.package.version.clone()
@@ -94,6 +95,7 @@ fn update() -> Result<()> {
 
     Ok(())
 }
+
 fn build() -> Result<()> {
     let temp_dir = temp_dir();
 
