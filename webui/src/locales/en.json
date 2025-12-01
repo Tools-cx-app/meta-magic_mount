@@ -13,7 +13,8 @@
     "status": "Status",
     "config": "Config",
     "modules": "Modules",
-    "logs": "Logs"
+    "logs": "Logs",
+    "info": "Info"
   },
   "status": {
     "deviceTitle": "Device Info",
@@ -83,5 +84,14 @@
     "copy": "Copy",
     "copySuccess": "Copied to clipboard",
     "copyFail": "Failed to copy"
+  },
+  "info": {
+    "title": "About",
+    "projectLink": "Repository",
+    "donate": "Donate",
+    "contributors": "Contributors",
+    "loading": "Loading contributors...",
+    "loadFail": "Failed to load (API Rate Limit)",
+    "noBio": "No bio available"
   }
 }
