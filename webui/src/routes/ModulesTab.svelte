@@ -13,6 +13,7 @@
   onMount(() => {
     store.loadModules();
   });
+
   let filteredModules = $derived(store.modules.filter(m => {
     const q = searchQuery.toLowerCase();
     const matchSearch = m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
@@ -111,14 +112,12 @@
             <div class="config-section">
               <div class="config-row">
                 <span class="config-label">{store.L.config.title}:</span>
-                <div 
-                  class="text-field compact-select"
-                  onclick={(e) => e.stopPropagation()}
-                  onkeydown={(e) => e.stopPropagation()}
-                  role="group"
-                  tabindex="-1"
-                >
-                  <select bind:value={mod.mode}>
+                <div class="text-field compact-select">
+                  <select 
+                    bind:value={mod.mode}
+                    onclick={(e) => e.stopPropagation()}
+                    onkeydown={(e) => e.stopPropagation()}
+                  >
                     <option value="auto">{store.L.modules.modeAuto}</option>
                     <option value="magic">{store.L.modules.modeMagic}</option>
                   </select>
@@ -141,4 +140,4 @@
     <svg viewBox="0 0 24 24" width="18" height="18"><path d={ICONS.save} fill="currentColor"/></svg>
     {store.saving.modules ? store.L.common.saving : store.L.modules.save}
   </button>
-</div>
+</div>  
