@@ -26,15 +26,16 @@
       if (!res.ok) throw new Error('Failed to fetch list');
       
       const basicList = await res.json();
-      
-      // 2. Fetch detailed user info to get bio (GitHub API rate limit applies)
-      // Since there might be many contributors, we process them in parallel.
-      const detailPromises = basicList.map(async (user) => {
-        try {
-            // Skip detailed fetch for bots
-            if (user.type === 'Bot') return { ...user, bio: 'Bot' };
 
-            const detailRes = await fetch(user.url); // user.url is the API url for user details
+      const filteredList = basicList.filter(user => {
+        const isBotType = user.type === 'Bot';
+        const hasBotName = user.login.toLowerCase().includes('bot');
+        return !isBotType && !hasBotName;
+      });
+
+      const detailPromises = filteredList.map(async (user) => {
+        try {
+            const detailRes = await fetch(user.url);
             if (detailRes.ok) {
                 const detail = await detailRes.json();
                 return { ...user, bio: detail.bio, name: detail.name || user.login };
@@ -44,7 +45,6 @@
         }
         return user; // Fallback to basic info on failure
       });
-
       contributors = await Promise.all(detailPromises);
     } catch (e) {
       console.error(e);
@@ -77,6 +77,7 @@
         <svg viewBox="0 0 24 24" class="action-icon"><path d={ICONS.github} /></svg>
         <span class="action-label">{store.L.info.projectLink}</span>
     </a>
+  
     <a href={DONATE_LINK} 
        class="action-card"
        onclick={(e) => handleLink(e, DONATE_LINK)}>
@@ -94,7 +95,9 @@
                 <div class="contributor-bar">
                     <Skeleton width="48px" height="48px" borderRadius="50%" />
                     <div class="c-info">
-                        <Skeleton width="120px" height="16px" style="margin-bottom: 6px;" />
+                        <div class="skeleton-spacer">
+                            <Skeleton width="120px" height="16px" />
+                        </div>
                         <Skeleton width="200px" height="12px" />
                     </div>
                 </div>
