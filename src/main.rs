@@ -73,7 +73,7 @@ fn main() -> Result<()> {
             "scan" => {
                 let json_output = args.len() > 2 && args[2] == "--json";
                 
-                let modules = scanner::scan_modules(&config.moduledir)?;
+                let modules = scanner::scan_modules(&config.moduledir);
 
                 if json_output {
                     let json = serde_json::to_string(&modules)?;
