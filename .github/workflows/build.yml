@@ -32,9 +32,8 @@ jobs:
         with:
           ndk-version: r27
 
-      - name: Install Build Dependencies
-        run: |
-          sudo apt-get update
+      - name: Install Tools
+        run: sudo apt-get update && sudo apt-get install -y zip
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -52,25 +51,57 @@ jobs:
           cache: 'npm'
           cache-dependency-path: webui/package-lock.json
 
-      - name: Install WebUI Dependencies
+      - name: Generate CI Version
+        id: version
+        run: |
+          # 提取 Cargo.toml 中的基础版本号
+          BASE_VER=$(grep '^version =' module/config.toml | cut -d'"' -f2 || echo "v0.0.0")
+          if [ -z "$BASE_VER" ]; then BASE_VER="v0.0.0"; fi
+          
+          # 生成 CI 版本: v0.2.8-ci.266
+          CI_VER="${BASE_VER}-ci.${{ github.run_number }}"
+          echo "MODULE_VERSION=$CI_VER" >> $GITHUB_ENV
+          echo "Generated Version: $CI_VER"
+
+      - name: Build WebUI
         run: |
           cd webui
           npm install
+          npm run build
+          if [ ! -d "dist" ]; then echo "Error: WebUI dist not found!"; exit 1; fi
 
-      - name: Build Project
+      - name: Build Universal Binaries
         run: |
-          cargo run -p xtask -- build --release
+          cargo run -p xtask -- build --release --arch arm64
+          cargo run -p xtask -- build --release --arch x86_64
+          cargo run -p xtask -- build --release --arch riscv64
+
+      - name: Assemble Module
+        run: |
+          WORKDIR="output/module_files"
+          mkdir -p "$WORKDIR"
+
+          # 1. 复制基础脚本 (prop, sh, config.toml)
+          cp -r module/* "$WORKDIR/"
           
-          if [ -f "output/version" ]; then
-            echo "MODULE_VERSION=$(cat output/version)" >> $GITHUB_ENV
-          else
-            echo "MODULE_VERSION=unknown" >> $GITHUB_ENV
-          fi
+          # 2. 复制 WebUI
+          mkdir -p "$WORKDIR/webui"
+          cp -r webui/dist/* "$WORKDIR/webui/"
+
+          # 3. 更新 module.prop 版本信息
+          sed -i "s/^version=.*/version=${{ env.MODULE_VERSION }}/" "$WORKDIR/module.prop"
+          sed -i "s/^versionCode=.*/versionCode=${{ github.run_number }}/" "$WORKDIR/module.prop"
+
+          # 4. 打包 Zip (二进制文件已由 xtask 输出到 output/module_files/binaries/)
+          ZIP_NAME="Meta-Hybrid-${{ env.MODULE_VERSION }}.zip"
+          cd "$WORKDIR"
+          zip -r "../../output/$ZIP_NAME" .
+          
+          echo "ZIP_PATH=output/$ZIP_NAME" >> $GITHUB_ENV
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v5
         with:
           name: Meta-Hybrid-${{ env.MODULE_VERSION }}
-          path: output/module_files/
+          path: ${{ env.ZIP_PATH }}
           if-no-files-found: error
-          include-hidden-files: true

@@ -33,9 +33,8 @@ jobs:
         with:
           ndk-version: r27
 
-      - name: Install Build Dependencies
-        run: |
-          sudo apt-get update
+      - name: Install Tools
+        run: sudo apt-get update && sudo apt-get install -y zip
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@nightly
@@ -55,65 +54,75 @@ jobs:
           cache: 'npm'
           cache-dependency-path: webui/package-lock.json
 
-      - name: Install WebUI Dependencies
+      - name: Set Release Version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+          else
+            TAG_NAME="v0.0.0-manual.${{ github.run_number }}"
+          fi
+          echo "MODULE_VERSION=$TAG_NAME" >> $GITHUB_ENV
+
+      - name: Build WebUI
         run: |
           cd webui
           npm install
+          npm run build
 
-      - name: Update Module Version
-        run: |
-          PROP_FILE="module/module.prop"
-          TAG_NAME="${{ github.ref_name }}"
-          RUN_NUMBER="${{ github.run_number }}"
-          
-          sed -i "s/^version=.*/version=$TAG_NAME/" "$PROP_FILE"
-          sed -i "s/^versionCode=.*/versionCode=$RUN_NUMBER/" "$PROP_FILE"
-          
-          cat "$PROP_FILE"
-
-      - name: Build Project
+      - name: Build Universal Binaries
         run: |
           cargo run -p xtask -- build --release --arch arm64
           cargo run -p xtask -- build --release --arch x86_64
           cargo run -p xtask -- build --release --arch riscv64
 
-      - name: Generate Update Files
+      - name: Assemble Module
+        run: |
+          WORKDIR="output/module_files"
+          mkdir -p "$WORKDIR"
+
+          # 复制文件
+          cp -r module/* "$WORKDIR/"
+          mkdir -p "$WORKDIR/webui"
+          cp -r webui/dist/* "$WORKDIR/webui/"
+
+          # 更新版本
+          sed -i "s/^version=.*/version=${{ env.MODULE_VERSION }}/" "$WORKDIR/module.prop"
+          sed -i "s/^versionCode=.*/versionCode=${{ github.run_number }}/" "$WORKDIR/module.prop"
+
+          # 打包
+          ZIP_NAME="Meta-Hybrid-${{ env.MODULE_VERSION }}.zip"
+          cd "$WORKDIR"
+          zip -r "../../output/$ZIP_NAME" .
+          
+          echo "ZIP_PATH=output/$ZIP_NAME" >> $GITHUB_ENV
+
+      - name: Generate Changelog
         id: meta
         run: |
-          PROP_FILE="output/module_files/module.prop"
-          VERSION=$(grep "^version=" "$PROP_FILE" | cut -d= -f2)
-          VERSION_CODE=$(grep "^versionCode=" "$PROP_FILE" | cut -d= -f2)
-          
-          ZIP_FILE=$(cd output && ls *.zip | head -n 1)
-          
+          ZIP_FILE=$(basename "${{ env.ZIP_PATH }}")
           REPO="${{ github.repository }}"
-          TAG="${{ github.ref_name }}"
+          TAG="${{ env.MODULE_VERSION }}"
           DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$ZIP_FILE"
-          CHANGELOG_URL="https://raw.githubusercontent.com/YuzakiKokuban/meta-hybrid_mount/master/changelog.md"
+          CHANGELOG_URL="https://raw.githubusercontent.com/$REPO/master/changelog.md"
           
           cat <<EOF > /tmp/update.json
           {
-            "version": "$VERSION",
-            "versionCode": $VERSION_CODE,
+            "version": "$TAG",
+            "versionCode": ${{ github.run_number }},
             "zipUrl": "$DOWNLOAD_URL",
             "changelog": "$CHANGELOG_URL"
           }
           EOF
           
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
-          echo "## $VERSION" > /tmp/changelog.md
+          echo "## $TAG" > /tmp/changelog.md
           echo "" >> /tmp/changelog.md
-          
           if [ -z "$PREV_TAG" ]; then
             echo "Initial release." >> /tmp/changelog.md
-            git log --pretty=format:"* %s" >> /tmp/changelog.md
           else
             echo "Changes since $PREV_TAG:" >> /tmp/changelog.md
             git log --pretty=format:"* %s" "$PREV_TAG..HEAD" >> /tmp/changelog.md
           fi
-          
-          cat /tmp/update.json
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -121,26 +130,22 @@ jobs:
         with:
           draft: false
           prerelease: false
-          files: output/*.zip
+          files: ${{ env.ZIP_PATH }}
           body_path: /tmp/changelog.md
 
-      - name: Push Update Info to Master
+      - name: Push Update Info
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git reset --hard
-          
           git fetch origin master
           git checkout master
           
           mv /tmp/update.json update.json
           mv /tmp/changelog.md changelog.md
-          
           git add update.json changelog.md
           
-          if git diff --staged --quiet; then
-            echo "No changes"
-          else
-            git commit -m "[skip ci] Update KernelSU json and changelog for ${{ github.ref_name }}"
+          if ! git diff --staged --quiet; then
+            git commit -m "[skip ci] Update metadata for ${{ env.MODULE_VERSION }}"
             git push origin master
           fi
