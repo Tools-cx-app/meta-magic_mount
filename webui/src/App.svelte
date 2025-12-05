@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { store } from './lib/store.svelte';
   import NavBar from './components/NavBar.svelte';
@@ -20,18 +20,18 @@
 
   const TABS = ['status', 'config', 'modules', 'logs', 'info'];
 
-  function switchTab(id) {
+  function switchTab(id: string) {
     activeTab = id;
   }
 
-  function handleTouchStart(e) {
+  function handleTouchStart(e: TouchEvent) {
     touchStartX = e.changedTouches[0].screenX;
     touchStartY = e.changedTouches[0].screenY;
     isDragging = true;
     dragOffset = 0;
   }
 
-  function handleTouchMove(e) {
+  function handleTouchMove(e: TouchEvent) {
     if (!isDragging) return;
     const currentX = e.changedTouches[0].screenX;
     const currentY = e.changedTouches[0].screenY;
@@ -43,7 +43,6 @@
     }
 
     if (e.cancelable) e.preventDefault();
-
     const currentIndex = TABS.indexOf(activeTab);
 
     if ((currentIndex === 0 && diffX > 0) || (currentIndex === TABS.length - 1 && diffX < 0)) {
