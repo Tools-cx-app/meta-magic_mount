@@ -38,7 +38,7 @@ struct MagicMount {
 
 impl MagicMount {
     fn new<P>(
-        node: Node,
+        node: &Node,
         path: P,
         work_dir_path: P,
         has_tmpfs: bool,
@@ -49,11 +49,11 @@ impl MagicMount {
     {
         Self {
             node: node.clone(),
-            path: path.as_ref().join(&node.name.clone()),
-            work_dir_path: work_dir_path.as_ref().join(&node.name.clone()),
+            path: path.as_ref().join(node.name.clone()),
+            work_dir_path: work_dir_path.as_ref().join(node.name.clone()),
             has_tmpfs,
             #[cfg(any(target_os = "linux", target_os = "android"))]
-            umount: umount,
+            umount,
         }
     }
 
@@ -101,7 +101,7 @@ impl MagicMount {
         }
     }
 
-    fn handle_regular_file(&mut self) -> Result<()> {
+    fn handle_regular_file(&self) -> Result<()> {
         let target_path = if self.has_tmpfs {
             fs::File::create(&self.work_dir_path)?;
             &self.work_dir_path
@@ -201,8 +201,8 @@ impl MagicMount {
                             continue;
                         }
                         {
-                            MagicMount::new(
-                                node,
+                            Self::new(
+                                &node,
                                 &self.path,
                                 &self.work_dir_path,
                                 has_tmpfs,
@@ -246,16 +246,8 @@ impl MagicMount {
             }
 
             if let Err(e) = {
-                /*do_magic_mount(
-                    &self.path,
-                    &self.work_dir_path,
+                Self::new(
                     node,
-                    has_tmpfs,
-                    #[cfg(any(target_os = "linux", target_os = "android"))]
-                    self.umount,
-                )*/
-                MagicMount::new(
-                    node.clone(),
                     &self.path,
                     &self.work_dir_path,
                     has_tmpfs,
@@ -310,7 +302,7 @@ impl MagicMount {
         }
         Ok(())
     }
-    fn handle_symlink(&mut self) -> Result<()> {
+    fn handle_symlink(&self) -> Result<()> {
         if let Some(module_path) = &self.node.module_path {
             log::debug!(
                 "create module symlink {} -> {}",
@@ -491,7 +483,7 @@ where
 
         let result = {
             MagicMount::new(
-                root,
+                &root,
                 Path::new("/"),
                 tmp_dir.as_path(),
                 false,
