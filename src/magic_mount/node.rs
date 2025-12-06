@@ -35,7 +35,7 @@ impl From<FileType> for NodeFileType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub name: String,
     pub file_type: NodeFileType,
