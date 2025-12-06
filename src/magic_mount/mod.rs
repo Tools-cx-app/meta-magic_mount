@@ -200,17 +200,16 @@ impl MagicMount {
                         if node.skip {
                             continue;
                         }
-                        {
-                            Self::new(
-                                &node,
-                                &self.path,
-                                &self.work_dir_path,
-                                has_tmpfs,
-                                #[cfg(any(target_os = "linux", target_os = "android"))]
-                                self.umount,
-                            )
-                            .do_magic_mount()
-                        }
+
+                        Self::new(
+                            &node,
+                            &self.path,
+                            &self.work_dir_path,
+                            has_tmpfs,
+                            #[cfg(any(target_os = "linux", target_os = "android"))]
+                            self.umount,
+                        )
+                        .do_magic_mount()
                         .with_context(|| format!("magic mount {}/{name}", self.path.display()))
                     } else if has_tmpfs {
                         mount_mirror(&self.path, &self.work_dir_path, &entry)
@@ -245,17 +244,15 @@ impl MagicMount {
                 continue;
             }
 
-            if let Err(e) = {
-                Self::new(
-                    node,
-                    &self.path,
-                    &self.work_dir_path,
-                    has_tmpfs,
-                    #[cfg(any(target_os = "linux", target_os = "android"))]
-                    self.umount,
-                )
-                .do_magic_mount()
-            }
+            if let Err(e) = Self::new(
+                node,
+                &self.path,
+                &self.work_dir_path,
+                has_tmpfs,
+                #[cfg(any(target_os = "linux", target_os = "android"))]
+                self.umount,
+            )
+            .do_magic_mount()
             .with_context(|| format!("magic mount {}/{name}", self.path.display()))
             {
                 if has_tmpfs {
