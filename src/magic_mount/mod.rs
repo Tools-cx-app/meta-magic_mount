@@ -140,7 +140,6 @@ impl MagicMount {
         let create_tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
 
         if !self.has_tmpfs && !create_tmpfs {
-            // (, create_tmpfs) = utils::check_tmpfs(&mut current, path.clone());
             self.check_tmpfs();
         }
 
@@ -153,7 +152,7 @@ impl MagicMount {
                 self.work_dir_path.display()
             );
 
-            create_dir_all(&self.work_dir_path)?;
+            let _ = create_dir_all(&self.work_dir_path);
 
             let (metadata, path) = {
                 if self.path.exists() {
