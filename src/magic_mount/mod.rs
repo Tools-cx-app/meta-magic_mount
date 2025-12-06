@@ -137,10 +137,12 @@ impl MagicMount {
     }
 
     fn handle_directory(&mut self) -> Result<()> {
-        let create_tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
+        let mut create_tmpfs =
+            !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
 
         if !self.has_tmpfs && !create_tmpfs {
             self.check_tmpfs();
+            create_tmpfs = self.has_tmpfs;
         }
 
         let has_tmpfs = self.has_tmpfs || create_tmpfs;
