@@ -235,6 +235,7 @@ where
         }
         NodeFileType::Directory => {
             let mut create_tmpfs = !has_tmpfs && current.replace && current.module_path.is_some();
+
             if !has_tmpfs && !create_tmpfs {
                 (current, create_tmpfs) = utils::check_tmpfs(&mut current, path.clone());
             }
@@ -247,14 +248,19 @@ where
                     path.display(),
                     work_dir_path.display()
                 );
+
                 create_dir_all(&work_dir_path)?;
-                let (metadata, path) = if path.exists() {
-                    (path.metadata()?, &path)
-                } else if let Some(module_path) = &current.module_path {
-                    (module_path.metadata()?, module_path)
-                } else {
-                    bail!("cannot mount root dir {}!", path.display());
+
+                let (metadata, path) = {
+                    if path.exists() {
+                        (path.metadata()?, &path)
+                    } else if let Some(module_path) = &current.module_path {
+                        (module_path.metadata()?, module_path)
+                    } else {
+                        bail!("cannot mount root dir {}!", path.display());
+                    }
                 };
+
                 chmod(&work_dir_path, Mode::from_raw_mode(metadata.mode()))?;
                 chown(
                     &work_dir_path,
@@ -270,6 +276,7 @@ where
                     path.display(),
                     work_dir_path.display()
                 );
+
                 mount_bind(&work_dir_path, &work_dir_path)
                     .context("bind self")
                     .with_context(|| {
@@ -284,24 +291,26 @@ where
             if path.exists() && !current.replace {
                 for entry in path.read_dir()?.flatten() {
                     let name = entry.file_name().to_string_lossy().to_string();
-                    let result = if let Some(node) = current.children.remove(&name) {
-                        if node.skip {
-                            continue;
+                    let result = {
+                        if let Some(node) = current.children.remove(&name) {
+                            if node.skip {
+                                continue;
+                            }
+                            do_magic_mount(
+                                &path,
+                                &work_dir_path,
+                                node,
+                                has_tmpfs,
+                                #[cfg(any(target_os = "linux", target_os = "android"))]
+                                umount,
+                            )
+                            .with_context(|| format!("magic mount {}/{name}", path.display()))
+                        } else if has_tmpfs {
+                            mount_mirror(&path, &work_dir_path, &entry)
+                                .with_context(|| format!("mount mirror {}/{name}", path.display()))
+                        } else {
+                            Ok(())
                         }
-                        do_magic_mount(
-                            &path,
-                            &work_dir_path,
-                            node,
-                            has_tmpfs,
-                            #[cfg(any(target_os = "linux", target_os = "android"))]
-                            umount,
-                        )
-                        .with_context(|| format!("magic mount {}/{name}", path.display()))
-                    } else if has_tmpfs {
-                        mount_mirror(&path, &work_dir_path, &entry)
-                            .with_context(|| format!("mount mirror {}/{name}", path.display()))
-                    } else {
-                        Ok(())
                     };
 
                     if let Err(e) = result {
@@ -320,6 +329,7 @@ where
                         path.display()
                     );
                 }
+
                 log::debug!("dir {} is replaced", path.display());
             }
 
@@ -327,6 +337,7 @@ where
                 if node.skip {
                     continue;
                 }
+
                 if let Err(e) = do_magic_mount(
                     &path,
                     &work_dir_path,
@@ -340,6 +351,7 @@ where
                     if has_tmpfs {
                         return Err(e);
                     }
+
                     log::error!("mount child {}/{name} failed: {e:#?}", path.display());
                 }
             }
@@ -350,6 +362,7 @@ where
                     work_dir_path.display(),
                     path.display()
                 );
+
                 if let Err(e) =
                     mount_remount(&work_dir_path, MountFlags::RDONLY | MountFlags::BIND, "")
                 {
