@@ -65,14 +65,14 @@
       >
         <svg viewBox="0 0 24 24"><path d={ICONS.translate} fill="currentColor"/></svg>
       </button>
+
+      {#if showLangMenu}
+        <div class="menu-dropdown" bind:this={menuRef}>
+            {#each store.availableLanguages ?? [] as l}
+                <button class="menu-item" onclick={() => setLang(l.code)}>{l.name}</button>
+            {/each}
+        </div>
+      {/if}
     </div>
   </div>
-  
-  {#if showLangMenu}
-    <div class="menu-dropdown" bind:this={menuRef}>
-      {#each store.availableLanguages ?? [] as l}
-        <button class="menu-item" onclick={() => setLang(l.code)}>{l.name}</button>
-      {/each}
-    </div>
-  {/if}
 </header>

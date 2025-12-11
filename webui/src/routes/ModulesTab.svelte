@@ -6,24 +6,19 @@
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './ModulesTab.css';
-
   let searchQuery = $state('');
   let expandedId = $state(null);
-
   onMount(() => {
     store.loadModules();
   });
-
   let filteredModules = $derived(store.modules.filter(m => {
     const q = searchQuery.toLowerCase();
     const matchSearch = m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
     return matchSearch;
   }));
-
   function toggleExpand(id) {
     expandedId = expandedId === id ? null : id;
   }
-
   function handleKeydown(e, id) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -31,13 +26,11 @@
     }
   }
 </script>
-
 <div class="md3-card desc-card">
   <p class="desc-text">
     {store.L.modules?.desc || "Modules are strictly managed by Magic Mount strategy."}
   </p>
 </div>
-
 <div class="search-container">
   <svg class="search-icon" viewBox="0 0 24 24"><path d={ICONS.search} /></svg>
   <input 
@@ -47,7 +40,6 @@
     bind:value={searchQuery}
   />
 </div>
-
 {#if store.loading.modules}
   <div class="rules-list">
     {#each Array(5) as _}
@@ -86,19 +78,16 @@
               <span class="module-id">{mod.id} <span class="version-tag">{mod.version}</span></span>
             </div>
           </div>
-          
           {#if mod.is_mounted}
              <div class="mode-badge badge-magic">Magic</div>
           {:else}
              <div class="mode-badge badge-none">Skipped</div>
           {/if}
         </div>
-        
         {#if expandedId === mod.id}
           <div class="rule-details" transition:slide={{ duration: 200 }}>
             <p class="module-desc">{mod.description || 'No description'}</p>
             <p class="module-meta">Author: {mod.author || 'Unknown'}</p>
-            
             {#if !mod.is_mounted}
                 <div class="status-alert">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path d={ICONS.info} fill="currentColor"/></svg>
@@ -119,7 +108,6 @@
     {/each}
   </div>
 {/if}
-
 <BottomActions>
   <button class="btn-tonal" onclick={() => store.loadModules()} disabled={store.loading.modules} title={store.L.modules?.reload}>
     <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.refresh} fill="currentColor"/></svg>

@@ -4,18 +4,14 @@
   import ChipInput from '../components/ChipInput.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './ConfigTab.css';
-
   let initialConfigStr = $state('');
-  
   const isValidPath = (p) => !p || (p.startsWith('/') && p.length > 1);
   let invalidModuleDir = $derived(!isValidPath(store.config.moduledir));
   let invalidTempDir = $derived(store.config.tempdir && !isValidPath(store.config.tempdir));
-
   let isDirty = $derived.by(() => {
     if (!initialConfigStr) return false;
     return JSON.stringify(store.config) !== initialConfigStr;
   });
-
   $effect(() => {
     if (!store.loading.config && store.config) {
       if (!initialConfigStr || initialConfigStr === JSON.stringify(store.config)) {
@@ -23,7 +19,6 @@
       }
     }
   });
-
   function save() {
     if (invalidModuleDir || invalidTempDir) {
       store.showToast(store.L.config.invalidPath, "error");
@@ -33,26 +28,21 @@
         initialConfigStr = JSON.stringify(store.config);
     });
   }
-  
   function reload() {
     store.loadConfig().then(() => {
         initialConfigStr = JSON.stringify(store.config);
     });
   }
-
   function resetTempDir() {
     store.config.tempdir = "";
   }
-
   function toggle(key) {
     if (typeof store.config[key] === 'boolean') {
       store.config[key] = !store.config[key];
     }
   }
 </script>
-
 <div class="config-container">
-  
   <section class="config-group">
     <div class="input-card">
       <div class="text-field-row" class:error={invalidModuleDir}>
@@ -64,9 +54,7 @@
           <input type="text" id="c-moduledir" bind:value={store.config.moduledir} placeholder="/data/adb/modules" />
         </div>
       </div>
-      
       <div class="divider"></div>
-
       <div class="text-field-row" class:error={invalidTempDir}>
         <div class="icon-slot">
           <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.timer} fill="currentColor"/></svg>
@@ -81,9 +69,18 @@
           </button>
         {/if}
       </div>
+      <div class="divider"></div>
+      <div class="text-field-row">
+        <div class="icon-slot">
+          <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.ksu} fill="currentColor"/></svg>
+        </div>
+        <div class="field-content">
+          <label for="c-mountsource">{store.L.config.mountSource}</label>
+          <input type="text" id="c-mountsource" bind:value={store.config.mountsource} />
+        </div>
+      </div>
     </div>
   </section>
-
   <section class="config-group">
     <div class="partition-card">
       <div class="partition-header">
@@ -100,21 +97,8 @@
       </div>
     </div>
   </section>
-
   <section class="config-group">
     <div class="options-grid">
-      <div class="option-tile static-input">
-        <div class="tile-top">
-          <div class="tile-icon neutral">
-            <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.ksu} fill="currentColor"/></svg>
-          </div>
-        </div>
-        <div class="tile-bottom">
-          <span class="tile-label">{store.L.config.mountSource}</span>
-          <input class="tile-input-overlay" type="text" bind:value={store.config.mountsource} />
-        </div>
-      </div>
-
       <button 
         class="option-tile clickable primary" 
         class:active={store.config.verbose} 
@@ -129,7 +113,6 @@
           <span class="tile-label">{store.L.config.verboseLabel}</span>
         </div>
       </button>
-
       <button 
         class="option-tile clickable tertiary" 
         class:active={store.config.disable_umount} 
@@ -144,11 +127,9 @@
           <span class="tile-label">{store.L.config.umountOn || 'Disable Unmount'}</span>
         </div>
       </button>
-
     </div>
   </section>
 </div>
-
 <BottomActions>
   <button 
     class="btn-tonal" 

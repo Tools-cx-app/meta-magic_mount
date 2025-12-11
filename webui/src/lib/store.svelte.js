@@ -7,6 +7,8 @@ const localeModules = import.meta.glob('../locales/*.json', { eager: true });
 /** @type {Record<string, any>} */
 const modulesAny = localeModules;
 
+let darkModeQuery;
+
 const createStore = () => {
   let theme = $state('auto');
   let isSystemDark = $state(false);
@@ -15,7 +17,8 @@ const createStore = () => {
   let loadedLocale = $state(null);
   let toast = $state({ id: 'init', text: '', type: 'info', visible: false });
 
-  const availableLanguages = Object.entries(modulesAny).map(([path, mod]) => {
+  const availableLanguages = Object.entries(modulesAny).map(([path, moduleData]) => {
+    const mod = /** @type {any} */ (moduleData);
     const match = path.match(/\/([^/]+)\.json$/);
     const code = match ? match[1] : 'en';
     const name = mod.default?.lang?.display || code.toUpperCase();
@@ -67,6 +70,7 @@ const createStore = () => {
 
   function setTheme(t) {
     theme = t;
+    localStorage.setItem('mm-theme', t);
     applyTheme();
   }
 
@@ -98,12 +102,19 @@ const createStore = () => {
     lang = savedLang;
     await loadLocale(savedLang);
 
-    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    isSystemDark = darkModeQuery.matches;
-    darkModeQuery.addEventListener('change', (e) => {
-      isSystemDark = e.matches;
-      applyTheme();
-    });
+    const savedTheme = localStorage.getItem('mm-theme');
+    if (savedTheme) {
+        theme = savedTheme;
+    }
+
+    if (!darkModeQuery && typeof window !== 'undefined') {
+        darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        isSystemDark = darkModeQuery.matches;
+        darkModeQuery.addEventListener('change', (e) => {
+          isSystemDark = e.matches;
+          applyTheme();
+        });
+    }
 
     try {
         const sysColor = await API.fetchSystemColor();

@@ -5,7 +5,6 @@
   import { cubicOut } from 'svelte/easing';
   import './Toast.css';
 </script>
-
 <div class="toast-container">
   {#each store.toasts as toast (toast.id)}
     <div

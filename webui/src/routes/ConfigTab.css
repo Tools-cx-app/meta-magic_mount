@@ -4,13 +4,11 @@
   gap: 24px;
   padding-bottom: 24px;
 }
-
 .config-group {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
 .input-card {
   background-color: var(--md-sys-color-surface-container);
   border-radius: 20px;
@@ -18,7 +16,6 @@
   display: flex;
   flex-direction: column;
 }
-
 .text-field-row {
   display: flex;
   align-items: center;
@@ -26,11 +23,9 @@
   gap: 16px;
   transition: background-color 0.2s;
 }
-
 .text-field-row:focus-within {
   background-color: var(--md-sys-color-surface-container-high);
 }
-
 .icon-slot {
   width: 24px;
   height: 24px;
@@ -40,20 +35,17 @@
   justify-content: center;
   flex-shrink: 0;
 }
-
 .field-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
-
 .field-content label {
   font-size: 12px;
   color: var(--md-sys-color-primary);
   font-weight: 500;
 }
-
 .field-content input {
   font-size: 16px;
   color: var(--md-sys-color-on-surface);
@@ -64,19 +56,16 @@
   width: 100%;
   font-family: var(--md-ref-typeface-mono);
 }
-
 .field-content input::placeholder {
   color: var(--md-sys-color-on-surface-variant);
   opacity: 0.5;
 }
-
 .divider {
   height: 1px;
   background-color: var(--md-sys-color-outline-variant);
   margin-left: 56px; 
   opacity: 0.5;
 }
-
 .mini-btn {
   background: transparent;
   border: none;
@@ -92,7 +81,6 @@
 .mini-btn:hover {
   background-color: var(--md-sys-color-surface-variant);
 }
-
 .partition-card {
   background-color: var(--md-sys-color-surface-container);
   border-radius: 20px;
@@ -101,13 +89,11 @@
   flex-direction: column;
   gap: 16px;
 }
-
 .partition-header {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
 .p-icon {
   width: 40px;
   height: 40px;
@@ -118,29 +104,24 @@
   align-items: center;
   justify-content: center;
 }
-
 .p-text {
   display: flex;
   flex-direction: column;
 }
-
 .p-title {
   font-size: 16px;
   font-weight: 500;
   color: var(--md-sys-color-on-surface);
 }
-
 .p-desc {
   font-size: 12px;
   color: var(--md-sys-color-on-surface-variant);
 }
-
 .options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-
 .option-tile {
   background-color: var(--md-sys-color-surface-container);
   border-radius: 20px;
@@ -156,20 +137,16 @@
   position: relative;
   overflow: hidden;
 }
-
 .option-tile.clickable {
   cursor: pointer;
 }
-
 .option-tile.clickable:active {
   transform: scale(0.98);
 }
-
 .tile-top {
   display: flex;
   align-items: flex-start;
 }
-
 .tile-icon {
   width: 32px;
   height: 32px;
@@ -181,21 +158,18 @@
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface-variant);
 }
-
 .tile-bottom {
   display: flex;
   flex-direction: column;
   gap: 2px;
   width: 100%;
 }
-
 .tile-label {
   font-size: 15px;
   font-weight: 500;
   color: var(--md-sys-color-on-surface);
   line-height: 1.2;
 }
-
 .option-tile.static-input {
   background-color: var(--md-sys-color-surface-container);
   cursor: default;
@@ -215,7 +189,6 @@
   border-bottom-width: 2px;
   border-bottom-color: var(--md-sys-color-primary);
 }
-
 .option-tile.primary.active {
   background-color: var(--md-sys-color-primary-container);
 }
@@ -226,7 +199,6 @@
 .option-tile.primary.active .tile-label {
   color: var(--md-sys-color-on-primary-container);
 }
-
 .option-tile.tertiary.active {
   background-color: var(--md-sys-color-tertiary-container);
 }
@@ -237,7 +209,6 @@
 .option-tile.tertiary.active .tile-label {
   color: var(--md-sys-color-on-tertiary-container);
 }
-
 .text-field-row.error label { color: var(--md-sys-color-error); }
 .text-field-row.error input { color: var(--md-sys-color-error); }
 .text-field-row.error .icon-slot { color: var(--md-sys-color-error); }

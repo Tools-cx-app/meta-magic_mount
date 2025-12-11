@@ -4,7 +4,6 @@
   gap: 12px;
   padding-bottom: 24px;
 }
-
 .rule-card {
   background: var(--md-sys-color-surface-container-low);
   border-radius: 24px;
@@ -14,22 +13,18 @@
   cursor: pointer;
   position: relative;
 }
-
 .rule-card:hover {
   background: var(--md-sys-color-surface-container);
 }
-
 .rule-card.expanded {
   background: var(--md-sys-color-surface-container);
 }
-
 .rule-card.unmounted {
     opacity: 0.8;
 }
 .rule-card.unmounted.expanded {
     opacity: 1;
 }
-
 .rule-main {
   padding: 20px;
   display: flex;
@@ -37,7 +32,6 @@
   justify-content: space-between;
   gap: 16px;
 }
-
 .rule-info {
   display: flex;
   align-items: center;
@@ -45,14 +39,12 @@
   flex: 1;
   min-width: 0;
 }
-
 .info-col {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
-
 .module-name {
   font-weight: 500;
   font-size: 16px;
@@ -62,7 +54,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .module-id {
   font-size: 13px;
   color: var(--md-sys-color-on-surface-variant);
@@ -72,13 +63,11 @@
   text-overflow: ellipsis;
   opacity: 0.8;
 }
-
 .version-tag {
   opacity: 0.6;
   margin-left: 8px;
   font-size: 12px;
 }
-
 .mode-badge {
   font-size: 12px;
   font-weight: 500;
@@ -91,36 +80,30 @@
   align-items: center;
   gap: 6px;
 }
-
 .badge-magic {
   background-color: var(--md-sys-color-tertiary-container);
   color: var(--md-sys-color-on-tertiary-container);
 }
-
 .badge-none {
   background-color: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-outline);
 }
-
 .rule-details {
   padding: 0 20px 20px 20px;
   border-top: 1px solid rgba(0,0,0,0.05);
 }
-
 .module-desc {
   margin: 16px 0 12px 0;
   font-size: 15px;
   color: var(--md-sys-color-on-surface-variant);
   line-height: 1.6;
 }
-
 .module-meta {
   margin: 0;
   font-size: 13px;
   color: var(--md-sys-color-outline);
   font-family: var(--md-ref-typeface-mono);
 }
-
 .status-alert {
     display: flex;
     align-items: center;
@@ -132,7 +115,6 @@
     border-radius: 8px;
     margin-top: 12px;
 }
-
 .search-container {
   display: flex;
   align-items: center;
@@ -153,18 +135,15 @@
   top: 0;
   z-index: 20;
 }
-
 .search-container:focus-within {
   background-color: var(--md-sys-color-surface-container-highest);
 }
-
 .search-icon {
   width: 24px;
   height: 24px;
   fill: var(--md-sys-color-on-surface);
   flex-shrink: 0; 
 }
-
 .search-input {
   flex: 1;
   border: none;
@@ -175,30 +154,25 @@
   outline: none;
   min-width: 0; 
 }
-
 .search-input::placeholder {
   color: var(--md-sys-color-on-surface-variant);
   opacity: 0.7;
 }
-
 .desc-card {
   padding: 16px;
 }
-
 .desc-text {
   margin: 0;
   font-size: 14px;
   color: var(--md-sys-color-on-surface-variant);
   line-height: 1.5;
 }
-
 .skeleton-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
 }
-
 .empty-state {
   text-align: center;
   padding: 48px 24px;

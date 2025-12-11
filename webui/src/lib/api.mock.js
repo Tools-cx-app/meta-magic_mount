@@ -1,11 +1,8 @@
 import { DEFAULT_CONFIG } from './constants';
-
 const MOCK_DELAY = 600;
-
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 export const MockAPI = {
   loadConfig: async () => {
     await delay(MOCK_DELAY);
@@ -19,12 +16,10 @@ export const MockAPI = {
       partitions: ['product', 'system_ext', 'vendor']
     };
   },
-
   saveConfig: async (config) => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] saveConfig:", config);
   },
-
   scanModules: async (moduleDir) => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] scanModules");
@@ -61,7 +56,6 @@ export const MockAPI = {
       }
     ];
   },
-
   readLogs: async (logPath, lines) => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] readLogs");
@@ -78,7 +72,6 @@ export const MockAPI = {
 [E] Failed to mount /system/my_custom_partition: No such file or directory
 [I] Daemon loop active`;
   },
-
   getStorageUsage: async () => {
     await delay(MOCK_DELAY);
     return {
@@ -89,7 +82,6 @@ export const MockAPI = {
       hymofs_available: false 
     };
   },
-
   getSystemInfo: async () => {
     await delay(MOCK_DELAY);
     return {
@@ -99,7 +91,6 @@ export const MockAPI = {
       activeMounts: ['youtube-revanced', 'pixelfy-gphotos']
     };
   },
-
   getDeviceStatus: async () => {
     await delay(MOCK_DELAY);
     return {
@@ -109,22 +100,18 @@ export const MockAPI = {
       selinux: 'Enforcing'
     };
   },
-
   getVersion: async () => {
     await delay(MOCK_DELAY);
     return "1.2.0-mock";
   },
-
   rebootDevice: async () => {
     console.log("[MockAPI] Reboot requested");
     alert("Reboot requested (Mock)");
   },
-
   openLink: async (url) => {
     console.log("[MockAPI] Open link:", url);
     window.open(url, '_blank');
   },
-
   fetchSystemColor: async () => {
     await delay(500);
     return '#50a48f'; 

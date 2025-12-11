@@ -5,18 +5,15 @@
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './LogsTab.css';
-
   let searchLogQuery = $state('');
   let filterLevel = $state('all'); 
   let logContainer = $state();
   let autoRefresh = $state(false);
   let refreshInterval;
   let userHasScrolledUp = $state(false);
-
   let filteredLogs = $derived(store.logs.filter(line => {
     const text = typeof line === 'string' ? line : line.text;
     const type = typeof line === 'string' ? 'info' : line.type;
-    
     const matchesSearch = text.toLowerCase().includes(searchLogQuery.toLowerCase());
     let matchesLevel = true;
     if (filterLevel !== 'all') {
@@ -24,7 +21,6 @@
     }
     return matchesSearch && matchesLevel;
   }));
-
   async function scrollToBottom() {
     if (logContainer) { 
       await tick();
@@ -32,14 +28,12 @@
       userHasScrolledUp = false;
     }
   }
-
   function handleScroll(e) {
     const target = e.target;
     const { scrollTop, scrollHeight, clientHeight } = target;
     const distanceToBottom = scrollHeight - scrollTop - clientHeight;
     userHasScrolledUp = distanceToBottom > 50;
   }
-
   async function refreshLogs(silent = false) {
     await store.loadLogs(silent);
     if (!silent && !userHasScrolledUp) {
@@ -48,7 +42,6 @@
       }
     }
   }
-
   async function copyLogs() {
     if (filteredLogs.length === 0) return;
     const text = filteredLogs.map(l => l.text || l).join('\n');
@@ -59,7 +52,6 @@
       store.showToast(store.L.logs.copyFail, 'error');
     }
   }
-
   $effect(() => {
     if (autoRefresh) {
       refreshLogs(true); 
@@ -71,16 +63,13 @@
     }
     return () => { if (refreshInterval) clearInterval(refreshInterval); };
   });
-
   onMount(() => {
     refreshLogs(); 
   });
-
   onDestroy(() => {
     if (refreshInterval) clearInterval(refreshInterval);
   });
 </script>
-
 <div class="logs-controls">
   <svg viewBox="0 0 24 24" width="20" height="20" class="log-search-icon">
     <path d={ICONS.search} />
@@ -103,7 +92,6 @@
     <option value="error">{store.L.logs.levels.error}</option>
   </select>
 </div>
-
 <div class="log-container" bind:this={logContainer} onscroll={handleScroll}>
   {#if store.loading.logs}
     <div class="log-skeleton-container">
@@ -125,7 +113,6 @@
       — Showing last 1000 lines —
     </div>
   {/if}
-
   {#if userHasScrolledUp}
     <button 
       class="scroll-fab" 
@@ -137,7 +124,6 @@
     </button>
   {/if}
 </div>
-
 <BottomActions>
   <button class="btn-tonal" onclick={copyLogs} disabled={filteredLogs.length === 0} title={store.L.logs.copy}>
     <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.copy} fill="currentColor"/></svg>

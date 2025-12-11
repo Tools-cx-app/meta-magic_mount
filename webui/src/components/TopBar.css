@@ -12,13 +12,11 @@
   justify-content: flex-end;
   overflow: visible; 
 }
-
 .top-bar-content {
   height: 100%;
   width: 100%;
   position: relative;
 }
-
 .screen-title {
   position: absolute;
   bottom: 24px;
@@ -32,7 +30,6 @@
   transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
   white-space: nowrap;
 }
-
 .top-actions {
   position: absolute;
   bottom: 20px; 
@@ -42,7 +39,6 @@
   gap: 8px;
   z-index: 50;
 }
-
 .btn-icon {
   width: 48px;
   height: 48px;
@@ -56,16 +52,13 @@
   align-items: center;
   justify-content: center;
 }
-
 .btn-icon:hover {
   background-color: var(--md-sys-color-surface-variant);
 }
-
 .btn-icon svg {
   width: 24px;
   height: 24px;
 }
-
 .menu-dropdown {
   position: absolute;
   top: 100%; 
@@ -79,7 +72,6 @@
   overflow: hidden; 
   box-shadow: var(--md-sys-elevation-2);
 }
-
 .menu-item {
   width: 100%;
   padding: 16px 24px;
@@ -95,7 +87,6 @@
   justify-content: space-between;
   gap: 16px;
 }
-
 .menu-item:hover {
   background: var(--md-sys-color-surface-variant);
 }

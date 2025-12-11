@@ -6,17 +6,14 @@
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './StatusTab.css';
-
   onMount(() => {
     store.loadStatus();
   });
-
   function handleReboot() {
     if (confirm("Reboot device?")) {
         API.rebootDevice();
     }
   }
-
   function copyDebugInfo() {
     const info = `Magic Mount v${store.version}\n` +
                  `Model: ${store.device.model}\n` +
@@ -26,11 +23,9 @@
     navigator.clipboard.writeText(info);
     store.showToast(store.L.logs.copySuccess, 'success');
   }
-
   let mountedCount = $derived(store.modules?.length ?? 0);
   let isSelinuxEnforcing = $derived(store.device.selinux === 'Enforcing');
 </script>
-
 <div class="dashboard-grid">
   <div class="hero-card">
     <div class="hero-content">
@@ -40,7 +35,6 @@
         </div>
         <span class="hero-title">{store.L.status.deviceTitle}</span>
       </div>
-
       <div class="hero-main-info">
         {#if store.loading.status}
           <Skeleton width="150px" height="32px" />
@@ -51,12 +45,10 @@
         {/if}
       </div>
     </div>
-    
     <button class="hero-action-btn" onclick={copyDebugInfo} title={store.L.status.copy}>
       <svg viewBox="0 0 24 24"><path d={ICONS.copy} /></svg>
     </button>
   </div>
-
   <div class="stats-row">
     <div class="stat-card">
       {#if store.loading.status}
@@ -67,7 +59,6 @@
         <div class="stat-label">{store.L.status.moduleActive}</div>
       {/if}
     </div>
-    
     <div class="stat-card">
       {#if store.loading.status}
          <Skeleton width="40px" height="32px" />
@@ -78,10 +69,8 @@
       {/if}
     </div>
   </div>
-
   <div class="details-card">
     <div class="card-title">{store.L.status.sysInfoTitle || "System Details"}</div>
-    
     <div class="info-list">
       <div class="info-item">
         <span class="info-label">{store.L.status.androidLabel}</span>
@@ -91,7 +80,6 @@
           <span class="info-val">{store.device.android}</span>
         {/if}
       </div>
-
       <div class="info-item">
         <span class="info-label">{store.L.status.selinuxLabel}</span>
         {#if store.loading.status}
@@ -102,7 +90,6 @@
           </span>
         {/if}
       </div>
-      
       <div class="info-item full-width">
         <span class="info-label">{store.L.status.kernelLabel}</span>
         {#if store.loading.status}
@@ -114,7 +101,6 @@
     </div>
   </div>
 </div>
-
 <BottomActions>
   <button class="btn-tonal" onclick={handleReboot}>
     <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.refresh} fill="currentColor"/></svg>

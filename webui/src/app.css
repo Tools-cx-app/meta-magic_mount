@@ -2,24 +2,18 @@
   --md-sys-shape-corner-medium: 12px;
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-full: 9999px;
-  
   --md-sys-color-shadow: #000000;
-  
-  --md-sys-elevation-1: 0 1px 2px 0 var(--md-sys-color-shadow), 0 1px 3px 1px var(--md-sys-color-shadow);
-  --md-sys-elevation-2: 0 1px 2px 0 var(--md-sys-color-shadow), 0 2px 6px 2px var(--md-sys-color-shadow);
-  --md-sys-elevation-3: 0 4px 8px 3px var(--md-sys-color-shadow), 0 1px 3px 0 var(--md-sys-color-shadow);
-
+  --md-sys-elevation-1: 0 1px 2px 0 rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  --md-sys-elevation-2: 0 1px 2px 0 rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+  --md-sys-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px 0 rgba(0,0,0,0.3);
   --font-common: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
   --md-ref-typeface-plain: var(--font-stack, var(--font-common));
   --md-ref-typeface-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
-
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
-
 html, body, #app {
   height: 100%;
   width: 100%;
@@ -34,11 +28,9 @@ html, body, #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 input, select, textarea, button {
   font-family: inherit;
 }
-
 button {
   border: none;
   cursor: pointer;
@@ -46,11 +38,9 @@ button {
   flex-shrink: 0;
   white-space: nowrap;
 }
-
 button:active {
   transform: scale(0.96);
 }
-
 .btn-filled {
   height: 44px;
   min-width: 90px;
@@ -66,7 +56,6 @@ button:active {
   gap: 8px;
   box-shadow: none;
 }
-
 .btn-filled:disabled {
   background-color: var(--md-sys-color-on-surface);
   opacity: 0.12;
@@ -74,7 +63,6 @@ button:active {
   cursor: not-allowed;
   box-shadow: none;
 }
-
 .btn-tonal {
   height: 44px;
   min-width: 90px;
@@ -89,7 +77,6 @@ button:active {
   justify-content: center;
   gap: 8px;
 }
-
 .btn-icon {
   width: 40px;
   height: 40px;
@@ -100,11 +87,9 @@ button:active {
   align-items: center;
   justify-content: center;
 }
-
 .btn-icon:hover {
   background-color: rgba(128,128,128, 0.1);
 }
-
 .md3-card {
   background-color: var(--md-sys-color-surface-container);
   border: 1px solid var(--md-sys-color-outline-variant);
@@ -116,11 +101,9 @@ button:active {
   margin-bottom: 16px;
   box-shadow: none;
 }
-
 .text-field {
   position: relative;
 }
-
 .text-field input, .text-field select {
   width: 100%;
   height: 56px;
@@ -135,7 +118,6 @@ button:active {
   transition: all 0.2s;
   appearance: none;
 }
-
 .text-field input:focus, .text-field select:focus {
   border-bottom: 2px solid var(--md-sys-color-primary);
   border-color: var(--md-sys-color-primary);
@@ -143,7 +125,6 @@ button:active {
   padding-left: 16px;
   padding-right: 16px;
 }
-
 .text-field label {
   position: absolute;
   top: 8px;
@@ -155,12 +136,10 @@ button:active {
   z-index: 1;
   pointer-events: none;
 }
-
 .text-field input:focus ~ label,
 .text-field select:focus ~ label {
   color: var(--md-sys-color-primary);
 }
-
 .bottom-actions {
   position: absolute;
   bottom: 0;
@@ -175,11 +154,9 @@ button:active {
   z-index: 50;
   pointer-events: none;
 }
-
 .bottom-actions button {
   pointer-events: auto;
 }
-
 code, pre {
   font-family: var(--md-ref-typeface-mono);
 }

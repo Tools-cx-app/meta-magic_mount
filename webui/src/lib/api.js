@@ -1,43 +1,33 @@
 import { DEFAULT_CONFIG, PATHS } from './constants';
 import { MockAPI } from './api.mock';
-
 let ksuExec = null;
-
 try {
   const ksu = await import('kernelsu').catch(() => null);
   ksuExec = ksu ? ksu.exec : null;
 } catch (e) {
   console.warn("KernelSU module not found, defaulting to Mock.");
 }
-
 const shouldUseMock = import.meta.env.DEV || !ksuExec;
-
 console.log(`[API Init] Mode: ${shouldUseMock ? '🛠️ MOCK' : '🚀 REAL'}`);
-
 function isTrueValue(v) {
   const s = String(v).trim().toLowerCase();
   return s === '1' || s === 'true' || s === 'yes' || s === 'on';
 }
-
 function stripQuotes(v) {
   if (v.startsWith('"') && v.endsWith('"')) {
     return v.slice(1, -1);
   }
   return v;
 }
-
 function parseKvConfig(text) {
   try {
     const result = { ...DEFAULT_CONFIG };
     const lines = text.split('\n');
-
     for (let line of lines) {
       line = line.trim();
       if (!line || line.startsWith('#')) continue;
-
       const eqIndex = line.indexOf('=');
       if (eqIndex < 0) continue;
-
       let key = line.slice(0, eqIndex).trim();
       let value = line.slice(eqIndex + 1).trim();
       if (!key || !value) continue;
@@ -51,10 +41,8 @@ function parseKvConfig(text) {
          if (key === 'partitions') result.partitions = parts;
          continue;
       }
-
       const rawValue = value;
       value = stripQuotes(value);
-
       switch (key) {
         case 'moduledir': result.moduledir = value; break;
         case 'tempdir': result.tempdir = value; break;
@@ -69,23 +57,18 @@ function parseKvConfig(text) {
     return DEFAULT_CONFIG;
   }
 }
-
 function serializeKvConfig(cfg) {
   const q = (s) => `"${s}"`;
   const lines = ['# Magic Mount Configuration File', ''];
-  
   lines.push(`moduledir = ${q(cfg.moduledir)}`);
   if (cfg.tempdir) lines.push(`tempdir = ${q(cfg.tempdir)}`);
   lines.push(`mountsource = ${q(cfg.mountsource)}`);
   lines.push(`verbose = ${cfg.verbose}`);
   lines.push(`umount = ${!cfg.disable_umount}`); 
-  
   const parts = cfg.partitions.map(p => q(p)).join(', ');
   lines.push(`partitions = [${parts}]`);
-  
   return lines.join('\n');
 }
-
 function formatBytes(bytes, decimals = 2) {
   if (!+bytes) return '0 B';
   const k = 1024;
@@ -94,7 +77,6 @@ function formatBytes(bytes, decimals = 2) {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
-
 const RealAPI = {
   loadConfig: async () => {
     try {
@@ -114,7 +96,6 @@ const RealAPI = {
     }
     return { ...DEFAULT_CONFIG, disable_umount: !DEFAULT_CONFIG.umount };
   },
-
   saveConfig: async (config) => {
     const content = serializeKvConfig(config);
     const cmd = `
@@ -127,7 +108,6 @@ EOF_CONFIG
     const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(`Failed to save config: ${stderr}`);
   },
-
   scanModules: async (moduleDir) => {
     const cmd = `/data/adb/modules/magic_mount_rs/meta-mm scan --json`;
     try {
@@ -157,14 +137,12 @@ EOF_CONFIG
     }
     return [];
   },
-
   readLogs: async (logPath = PATHS.LOG_FILE, lines = 1000) => {
     const cmd = `[ -f "${logPath}" ] && tail -n ${lines} "${logPath}" || echo ""`;
     const { errno, stdout, stderr } = await ksuExec(cmd);
     if (errno === 0) return stdout || "";
     throw new Error(stderr || "Log file not found");
   },
-
   getStorageUsage: async () => {
       try {
           const { stdout } = await ksuExec(`df -k /data/adb/modules | tail -n 1`);
@@ -186,7 +164,6 @@ EOF_CONFIG
       } catch (e) {}
       return { size: '-', used: '-', percent: '0%', type: null, hymofs_available: false };
   },
-
   getSystemInfo: async () => {
     try {
       const cmd = `
@@ -195,14 +172,12 @@ EOF_CONFIG
       `;
       const { errno, stdout } = await ksuExec(cmd);
       let info = { kernel: '-', selinux: '-', mountBase: '/data/adb/modules', activeMounts: [] };
-      
       if (errno === 0 && stdout) {
         stdout.split('\n').forEach(line => {
           if (line.startsWith('KERNEL:')) info.kernel = line.substring(7).trim();
           else if (line.startsWith('SELINUX:')) info.selinux = line.substring(8).trim();
         });
       }
-      
       const m = await ksuExec(`ls -1 /data/adb/modules`);
       if (m.errno === 0 && m.stdout) {
           info.activeMounts = m.stdout.split('\n').filter(s => s.trim() && s !== 'magic_mount_rs');
@@ -212,7 +187,6 @@ EOF_CONFIG
       return { kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] };
     }
   },
-
   getDeviceStatus: async () => {
     const cmd = `getprop ro.product.model; getprop ro.build.version.release`;
     const { stdout } = await ksuExec(cmd);
@@ -224,7 +198,6 @@ EOF_CONFIG
         selinux: 'See System Info'
     };
   },
-
   getVersion: async () => {
     const cmd = `/data/adb/modules/magic_mount_rs/meta-mm version`;
     try {
@@ -236,17 +209,14 @@ EOF_CONFIG
     } catch (e) {}
     return "Unknown";
   },
-
   rebootDevice: async () => {
       await ksuExec(`reboot`);
   },
-
   openLink: async (url) => {
     const safeUrl = url.replace(/"/g, '\\"');
     const cmd = `am start -a android.intent.action.VIEW -d "${safeUrl}"`;
     await ksuExec(cmd);
   },
-
   fetchSystemColor: async () => {
     try {
       const { stdout } = await ksuExec('settings get secure theme_customization_overlay_packages');
@@ -263,5 +233,4 @@ EOF_CONFIG
     return null;
   }
 };
-
 export const API = shouldUseMock ? MockAPI : RealAPI;

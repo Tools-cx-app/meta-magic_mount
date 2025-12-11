@@ -13,11 +13,9 @@
   gap: 8px;
   z-index: 100;
 }
-
 .bottom-nav::-webkit-scrollbar {
   display: none;
 }
-
 .nav-tab {
   flex: 1;
   min-width: 64px;
@@ -34,7 +32,6 @@
   border: none;
   padding: 0;
 }
-
 .icon-container {
   width: 64px;
   height: 32px;
@@ -44,31 +41,25 @@
   justify-content: center;
   transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
-
 .nav-tab svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
   transition: all 0.2s;
 }
-
 .nav-tab.active .icon-container {
   background-color: var(--md-sys-color-secondary-container);
   width: 64px;
 }
-
 .nav-tab.active {
   color: var(--md-sys-color-on-surface);
 }
-
 .nav-tab.active svg {
   fill: var(--md-sys-color-on-secondary-container);
 }
-
 .nav-tab.active .label {
   font-weight: 700;
 }
-
 .nav-tab:active .icon-container {
   opacity: 0.8;
 }
