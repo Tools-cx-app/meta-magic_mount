@@ -1,128 +1,39 @@
 <script>
-  import { onMount } from 'svelte';
   import { store } from '../lib/store.svelte';
-  import { API } from '../lib/api';
-  import { ICONS } from '../lib/constants';
   import './InfoTab.css';
-  import Skeleton from '../components/Skeleton.svelte';
-
-  const REPO_OWNER = 'Tools-cx-app';
-  const REPO_NAME = 'meta-magic_mount';
-  // Sponsor link placeholder
-  const DONATE_LINK = 'https://github.com/sponsors/Tools-cx-app'; 
-
-  let contributors = $state([]);
-  let loading = $state(true);
-  let error = $state(false);
-
-  onMount(async () => {
-    await fetchContributors();
-  });
-
-  async function fetchContributors() {
-    try {
-      // 1. Fetch basic contributor list
-      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contributors`);
-      if (!res.ok) throw new Error('Failed to fetch list');
-      
-      const basicList = await res.json();
-
-      const filteredList = basicList.filter(user => {
-        const isBotType = user.type === 'Bot';
-        const hasBotName = user.login.toLowerCase().includes('bot');
-        return !isBotType && !hasBotName;
-      });
-
-      const detailPromises = filteredList.map(async (user) => {
-        try {
-            const detailRes = await fetch(user.url);
-            if (detailRes.ok) {
-                const detail = await detailRes.json();
-                return { ...user, bio: detail.bio, name: detail.name || user.login };
-            }
-        } catch (e) {
-            console.warn('Failed to fetch detail for', user.login);
-        }
-        return user; // Fallback to basic info on failure
-      });
-      contributors = await Promise.all(detailPromises);
-    } catch (e) {
-      console.error(e);
-      error = true;
-    } finally {
-      loading = false;
-    }
-  }
-
-  function handleLink(e, url) {
-    e.preventDefault();
-    API.openLink(url);
-  }
 </script>
 
 <div class="info-container">
   
-  <div class="project-header">
-    <div class="app-logo">
-        <svg viewBox="0 0 24 24" width="32" height="32"><path d={ICONS.home} fill="currentColor"/></svg>
+  <div class="header-section">
+    <div class="logo-circle">
+      <svg viewBox="0 0 24 24" width="48" height="48">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+      </svg>
     </div>
-    <span class="app-name">{store.L.common.appName}</span>
-    <span class="app-version">v{store.version}</span>
+    <h1 class="app-name">{store.L.common?.appName || 'Magic Mount'}</h1>
+    <div class="version-badge">v{store.version}</div>
   </div>
 
-  <div class="action-grid">
-    <a href={`https://github.com/${REPO_OWNER}/${REPO_NAME}`} 
-       class="action-card"
-       onclick={(e) => handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`)}>
-        <svg viewBox="0 0 24 24" class="action-icon"><path d={ICONS.github} /></svg>
-        <span class="action-label">{store.L.info.projectLink}</span>
-    </a>
-  
-    <a href={DONATE_LINK} 
-       class="action-card"
-       onclick={(e) => handleLink(e, DONATE_LINK)}>
-        <svg viewBox="0 0 24 24" class="action-icon" style="fill: #ffab91;"><path d={ICONS.donate} /></svg>
-        <span class="action-label">{store.L.info.donate}</span>
-    </a>
+  <div class="info-card">
+    <div class="info-row">
+      <span class="label">Theme</span>
+      <span class="value" style="text-transform: capitalize;">{store.theme}</span>
+    </div>
+    <div class="divider"></div>
+    <div class="info-row">
+      <span class="label">Language</span>
+      <span class="value" style="text-transform: uppercase;">{store.lang}</span>
+    </div>
+    <div class="divider"></div>
+    <div class="info-row">
+      <span class="label">Modules Loaded</span>
+      <span class="value">{store.modules.length}</span>
+    </div>
   </div>
 
-  <div>
-    <div class="section-title">{store.L.info.contributors}</div>
-    
-    <div class="contributors-list">
-        {#if loading}
-            {#each Array(3) as _}
-                <div class="contributor-bar">
-                    <Skeleton width="48px" height="48px" borderRadius="50%" />
-                    <div class="c-info">
-                        <div class="skeleton-spacer">
-                            <Skeleton width="120px" height="16px" />
-                        </div>
-                        <Skeleton width="200px" height="12px" />
-                    </div>
-                </div>
-            {/each}
-        {:else if error}
-            <div style="text-align:center; padding: 20px; opacity: 0.6; color: var(--md-sys-color-error);">
-                {store.L.info.loadFail}
-            </div>
-        {:else}
-            {#each contributors as user}
-                <a href={user.html_url} 
-                   class="contributor-bar"
-                   onclick={(e) => handleLink(e, user.html_url)}>
-                    <img src={user.avatar_url} alt={user.login} class="c-avatar" />
-                    <div class="c-info">
-                        <span class="c-name">{user.name || user.login}</span>
-                        <span class="c-bio">
-                            {user.bio || store.L.info.noBio}
-                        </span>
-                    </div>
-                    <svg viewBox="0 0 24 24" class="c-link-icon"><path d={ICONS.share} /></svg>
-                </a>
-            {/each}
-        {/if}
-    </div>
+  <div class="footer-text">
+    <p>Magic Mount Manager</p>
   </div>
 
 </div>

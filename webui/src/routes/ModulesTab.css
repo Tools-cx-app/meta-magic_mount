@@ -2,15 +2,17 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-bottom: 24px;
 }
 
 .rule-card {
   background: var(--md-sys-color-surface-container-low);
-  border-radius: 16px;
+  border-radius: 24px;
   overflow: hidden;
-  transition: background-color 0.2s;
-  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  border: none;
   cursor: pointer;
+  position: relative;
 }
 
 .rule-card:hover {
@@ -19,15 +21,21 @@
 
 .rule-card.expanded {
   background: var(--md-sys-color-surface-container);
-  border-color: var(--md-sys-color-outline-variant);
+}
+
+.rule-card.unmounted {
+    opacity: 0.8;
+}
+.rule-card.unmounted.expanded {
+    opacity: 1;
 }
 
 .rule-main {
-  padding: 16px;
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
 }
 
 .rule-info {
@@ -35,6 +43,13 @@
   align-items: center;
   gap: 16px;
   flex: 1;
+  min-width: 0;
+}
+
+.info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -49,49 +64,105 @@
 }
 
 .module-id {
-  font-size: 12px;
-  color: var(--md-sys-color-outline);
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-ref-typeface-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+}
+
+.version-tag {
+  opacity: 0.6;
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.mode-badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge-magic {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.badge-none {
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-outline);
 }
 
 .rule-details {
-  padding: 0 16px 16px 16px;
-  border-top: 1px solid var(--md-sys-color-surface-variant);
-  background-color: rgba(0,0,0,0.02);
+  padding: 0 20px 20px 20px;
+  border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 .module-desc {
-  margin: 12px 0 8px 0;
-  font-size: 14px;
+  margin: 16px 0 12px 0;
+  font-size: 15px;
   color: var(--md-sys-color-on-surface-variant);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .module-meta {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--md-sys-color-outline);
   font-family: var(--md-ref-typeface-mono);
 }
 
-/* Search Bar Styles */
+.status-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--md-sys-color-on-surface-variant);
+    background-color: var(--md-sys-color-surface-container-high);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
 .search-container {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  background-color: var(--md-sys-color-surface-container);
-  border-radius: 28px;
-  padding: 0 16px;
-  height: 56px;
-  box-shadow: var(--md-sys-elevation-1);
+  gap: 16px;
+  margin-bottom: 20px;
+  background-color: var(--md-sys-color-surface-container-high);
+  border-radius: 9999px; 
+  padding: 0 24px;
+  height: 64px; 
+  min-height: 64px;
+  max-height: 64px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  overflow: hidden; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: background-color 0.2s;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.search-container:focus-within {
+  background-color: var(--md-sys-color-surface-container-highest);
 }
 
 .search-icon {
   width: 24px;
   height: 24px;
-  fill: var(--md-sys-color-on-surface-variant);
-  flex-shrink: 0;
+  fill: var(--md-sys-color-on-surface);
+  flex-shrink: 0; 
 }
 
 .search-input {
@@ -102,7 +173,7 @@
   font-size: 16px;
   color: var(--md-sys-color-on-surface);
   outline: none;
-  min-width: 0;
+  min-width: 0; 
 }
 
 .search-input::placeholder {
@@ -110,19 +181,26 @@
   opacity: 0.7;
 }
 
-.filter-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.desc-card {
+  padding: 16px;
 }
 
-.filter-select {
-  background: transparent;
-  border: none;
-  color: var(--md-sys-color-primary);
+.desc-text {
+  margin: 0;
   font-size: 14px;
-  font-weight: 500;
-  outline: none;
-  padding-right: 4px;
-  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+.skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  opacity: 0.6;
 }
