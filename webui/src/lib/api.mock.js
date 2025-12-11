@@ -127,6 +127,6 @@ export const MockAPI = {
 
   fetchSystemColor: async () => {
     await delay(500);
-    return '#6750A4'; 
+    return '#50a48f'; 
   }
 };
