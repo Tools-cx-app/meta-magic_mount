@@ -4,164 +4,243 @@ import { Monet } from './theme';
 
 const localeModules = import.meta.glob('../locales/*.json', { eager: true });
 
-export const store = $state({
-  config: { ...DEFAULT_CONFIG },
-  modules: [],
-  logs: "", 
-  device: { model: 'Loading...', android: '-', kernel: '-', selinux: '-' },
-  version: '...',
-  
-  loading: { config: false, modules: false, logs: false, status: false },
-  saving: { config: false, modules: false },
-  toast: { text: '', type: 'info', visible: false },
-  
-  // Settings
-  theme: 'auto',
-  isSystemDark: false,
-  lang: 'en',
-  seed: DEFAULT_SEED,
-  loadedLocale: null,
+/** @type {Record<string, any>} */
+const modulesAny = localeModules;
 
-  get availableLanguages() {
-    return Object.entries(localeModules).map(([path, mod]) => {
-      const match = path.match(/\/([^/]+)\.json$/);
-      const code = match ? match[1] : 'en';
-      const name = mod.default?.lang?.display || code.toUpperCase();
-      return { code, name };
-    }).sort((a, b) => {
-      if (a.code === 'en') return -1;
-      if (b.code === 'en') return 1;
-      return a.code.localeCompare(b.code);
+const createStore = () => {
+  let theme = $state('auto');
+  let isSystemDark = $state(false);
+  let lang = $state('en');
+  let seed = $state(DEFAULT_SEED);
+  let loadedLocale = $state(null);
+  let toast = $state({ id: 'init', text: '', type: 'info', visible: false });
+
+  const availableLanguages = Object.entries(modulesAny).map(([path, mod]) => {
+    const match = path.match(/\/([^/]+)\.json$/);
+    const code = match ? match[1] : 'en';
+    const name = mod.default?.lang?.display || code.toUpperCase();
+    return { code, name };
+  }).sort((a, b) => {
+    if (a.code === 'en') return -1;
+    if (b.code === 'en') return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  let config = $state(DEFAULT_CONFIG);
+  let modules = $state([]);
+  let logs = $state([]);
+  
+  let device = $state({ model: '-', android: '-', kernel: '-', selinux: '-' });
+  let version = $state('...');
+  let storage = $state({ used: '-', size: '-', percent: '0%', type: null, hymofs_available: false });
+  let systemInfo = $state({ kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] });
+  let activePartitions = $state([]);
+
+  let loadingConfig = $state(false);
+  let loadingModules = $state(false);
+  let loadingLogs = $state(false);
+  let loadingStatus = $state(false);
+  
+  let savingConfig = $state(false);
+  let savingModules = $state(false);
+
+  let L = $derived(loadedLocale?.default || {});
+
+  let modeStats = $derived.by(() => {
+    const stats = { auto: 0, magic: 0, hymofs: 0 };
+    modules.forEach(m => {
+        if (!m.is_mounted) return;
+        stats.magic++;
     });
-  },
+    return stats;
+  });
 
-  get L() {
-    return this.loadedLocale || this.getFallbackLocale();
-  },
+  function showToast(text, type = 'info') {
+    const id = Date.now().toString();
+    toast = { id, text, type, visible: true };
+    setTimeout(() => {
+      if (toast.id === id) {
+        toast.visible = false;
+      }
+    }, 3000);
+  }
 
-  getFallbackLocale() {
-    return {
-        common: { appName: "Magic Mount", saving: "...", theme: "Theme", language: "Language", themeAuto: "Auto", themeLight: "Light", themeDark: "Dark" },
-        lang: { display: "English" },
-        tabs: { status: "Status", config: "Config", modules: "Modules", logs: "Logs" },
-        status: { deviceTitle: "Device Info", moduleTitle: "Modules", moduleActive: "Active Modules", modelLabel: "Model", androidLabel: "Android Ver", kernelLabel: "Kernel", selinuxLabel: "SELinux", reboot: "Reboot Device", copy: "Copy Info" },
-        config: { title: "Config", verboseLabel: "Verbose", verboseOff: "Off", verboseOn: "On", moduleDir: "Module Dir", tempDir: "Temp Dir", mountSource: "Mount Source", logFile: "Log File", partitions: "Partitions", autoPlaceholder: "Auto", reload: "Reload", save: "Save", reset: "Reset", invalidPath: "Invalid path", loadSuccess: "Config Loaded", loadError: "Load Error", loadDefault: "Using Default", saveSuccess: "Saved", saveFailed: "Save Failed", umountLabel: "Umount", umountOff: "Unmount", umountOn: "No Unmount" },
-        modules: { title: "Modules", desc: "Modules strictly managed by Magic Mount.", scanning: "Scanning...", reload: "Refresh", save: "Save", empty: "No magic-mounted modules", scanError: "Scan Failed", saveSuccess: "Saved", saveFailed: "Failed", searchPlaceholder: "Search", filterLabel: "Filter", filterAll: "All", toggleError: "Toggle Failed" },
-        logs: { title: "Logs", loading: "Loading...", refresh: "Refresh", empty: "Empty", copy: "Copy", copySuccess: "Copied", copyFail: "Failed", searchPlaceholder: "Search", filterLabel: "Level", levels: { all: "All", info: "Info", warn: "Warn", error: "Error" }, current: "Current", old: "Old", readFailed: "Read Failed", readException: "Exception" }
-    };
-  },
+  function setTheme(t) {
+    theme = t;
+    applyTheme();
+  }
 
-  showToast(msg, type = 'info') {
-    this.toast = { text: msg, type, visible: true };
-    setTimeout(() => { this.toast.visible = false; }, 3000);
-  },
+  function applyTheme() {
+    const isDark = theme === 'auto' ? isSystemDark : theme === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    Monet.apply(seed, isDark);
+  }
 
-  applyTheme() {
-    const isDark = this.theme === 'auto' ? this.isSystemDark : this.theme === 'dark';
-    const attr = isDark ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', attr);
-    Monet.apply(this.seed, isDark);
-  },
-
-  setTheme(newTheme) {
-    this.theme = newTheme;
-    localStorage.setItem('mm-theme', newTheme);
-    this.applyTheme();
-  },
-
-  async setLang(code) {
+  async function loadLocale(code) {
     const path = `../locales/${code}.json`;
-    if (localeModules[path]) {
-      try {
-        const mod = localeModules[path];
-        this.loadedLocale = mod.default; 
-        this.lang = code;
-        localStorage.setItem('mm-lang', code);
-      } catch (e) {
-        console.error(`Failed to load locale: ${code}`, e);
-        if (code !== 'en') await this.setLang('en');
-      }
+    // We can use the already loaded modulesAny here
+    // But we need to construct the key that matches import.meta.glob
+    const entry = Object.entries(modulesAny).find(([k]) => k.endsWith(`/${code}.json`));
+    if (entry) {
+        loadedLocale = entry[1];
+    } else {
+        // Fallback or load en
+        const enEntry = Object.entries(modulesAny).find(([k]) => k.endsWith('/en.json'));
+        if (enEntry) loadedLocale = enEntry[1];
     }
-  },
+  }
 
-  async init() {
+  function setLang(code) {
+    lang = code;
+    localStorage.setItem('mm-lang', code);
+    loadLocale(code);
+  }
+
+  async function init() {
     const savedLang = localStorage.getItem('mm-lang') || 'en';
-    await this.setLang(savedLang);
-    
-    this.theme = localStorage.getItem('mm-theme') || 'auto';
-    
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    this.isSystemDark = mediaQuery.matches;
-    
-    mediaQuery.addEventListener('change', (e) => {
-      this.isSystemDark = e.matches;
-      if (this.theme === 'auto') {
-        this.applyTheme();
-      }
+    lang = savedLang;
+    await loadLocale(savedLang);
+
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    isSystemDark = darkModeQuery.matches;
+    darkModeQuery.addEventListener('change', (e) => {
+      isSystemDark = e.matches;
+      applyTheme();
     });
+
+    try {
+        const sysColor = await API.fetchSystemColor();
+        if (sysColor) {
+            seed = sysColor;
+        }
+    } catch {}
     
-    const sysColor = await API.fetchSystemColor();
-    if (sysColor) {
-      this.seed = sysColor;
-    }
+    applyTheme();
     
-    this.applyTheme();
-    await this.loadConfig();
-  },
+    await Promise.all([
+      loadConfig(),
+      loadStatus()
+    ]);
+  }
 
-  async loadConfig() {
-    this.loading.config = true;
+  async function loadConfig() {
+    loadingConfig = true;
     try {
-      this.config = await API.loadConfig();
-      if (this.L?.config) this.showToast(this.L.config.loadSuccess);
+      config = await API.loadConfig();
     } catch (e) {
-      if (this.L?.config) this.showToast(this.L.config.loadError, 'error');
+      showToast('Failed to load config', 'error');
     }
-    this.loading.config = false;
-  },
+    loadingConfig = false;
+  }
 
-  async saveConfig() {
-    this.saving.config = true;
+  async function saveConfig() {
+    savingConfig = true;
     try {
-      await API.saveConfig(this.config);
-      this.showToast(this.L.config.saveSuccess);
+      await API.saveConfig($state.snapshot(config));
+      showToast(L.common?.saveSuccess || 'Saved', 'success');
     } catch (e) {
-      this.showToast(this.L.config.saveFailed, 'error');
+      showToast('Failed to save config', 'error');
     }
-    this.saving.config = false;
-  },
+    savingConfig = false;
+  }
 
-  async loadModules() {
-    this.loading.modules = true;
+  async function loadModules() {
+    loadingModules = true;
     try {
-      this.modules = await API.scanModules(this.config.moduledir);
+      modules = await API.scanModules(config.moduledir);
     } catch (e) {
-      this.showToast(this.L.modules.scanError, 'error');
+      showToast('Failed to load modules', 'error');
     }
-    this.loading.modules = false;
-  },
+    loadingModules = false;
+  }
 
-  async loadLogs(silent = false) {
-    if (!silent) this.loading.logs = true;
+  async function saveModules() {
+    showToast("Not supported in this version", "info");
+  }
+
+  async function loadLogs(silent = false) {
+    if (!silent) loadingLogs = true;
     try {
-      const raw = await API.readLogs();
-      this.logs = raw || this.L.logs.empty;
+      const rawLogs = await API.readLogs();
+      logs = rawLogs.split('\n').map(line => {
+        let type = 'info';
+        if (line.includes('[E]') || line.includes('ERROR')) type = 'error';
+        else if (line.includes('[W]') || line.includes('WARN')) type = 'warn';
+        else if (line.includes('[D]') || line.includes('DEBUG')) type = 'debug';
+        return { text: line, type };
+      });
     } catch (e) {
-      this.logs = `Error loading logs: ${e.message}`;
-      if (!silent) this.showToast(this.L.logs.readFailed, 'error');
+      logs = [{ text: "Failed to load logs.", type: 'error' }];
     }
-    this.loading.logs = false;
-  },
+    loadingLogs = false;
+  }
 
-  async loadStatus() {
-    this.loading.status = true;
+  async function loadStatus() {
+    loadingStatus = true;
     try {
-      this.device = await API.getDeviceStatus();
-      this.version = await API.getVersion();
-      if (this.modules.length === 0) {
-        await this.loadModules();
+      device = await API.getDeviceStatus();
+      version = await API.getVersion();
+      storage = await API.getStorageUsage();
+      systemInfo = await API.getSystemInfo();
+      activePartitions = systemInfo.activeMounts || [];
+      
+      if (modules.length === 0) {
+        await loadModules();
       }
     } catch (e) {}
-    this.loading.status = false;
+    loadingStatus = false;
   }
-});
+
+  return {
+    get theme() { return theme; },
+    get isSystemDark() { return isSystemDark; },
+    get lang() { return lang; },
+    get seed() { return seed; },
+    get availableLanguages() { return availableLanguages; },
+    get L() { return L; },
+    get toast() { return toast; },
+    get toasts() { return toast.visible ? [toast] : []; },
+    showToast,
+    setTheme,
+    setLang,
+    init,
+
+    get config() { return config; },
+    set config(v) { config = v; },
+    loadConfig,
+    saveConfig,
+
+    get modules() { return modules; },
+    set modules(v) { modules = v; },
+    get modeStats() { return modeStats; },
+    loadModules,
+    saveModules,
+
+    get logs() { return logs; },
+    loadLogs,
+
+    get device() { return device; },
+    get version() { return version; },
+    get storage() { return storage; },
+    get systemInfo() { return systemInfo; },
+    get activePartitions() { return activePartitions; },
+    loadStatus,
+
+    get loading() {
+      return {
+        config: loadingConfig,
+        modules: loadingModules,
+        logs: loadingLogs,
+        status: loadingStatus
+      };
+    },
+    get saving() {
+      return {
+        config: savingConfig,
+        modules: savingModules
+      };
+    }
+  };
+};
+
+export const store = createStore();
