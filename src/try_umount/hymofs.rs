@@ -4,6 +4,7 @@ use std::{
     io,
     os::fd::{AsRawFd, RawFd},
     path::Path,
+    sync::OnceLock,
 };
 
 use anyhow::Result;
@@ -12,6 +13,7 @@ use rustix::path::Arg;
 const HYMO_IOC_MAGIC: u32 = 0xE0;
 const HYMO_IOCTL_HIDE: u64 = ioctl_cmd_write(3, std::mem::size_of::<HymoHide>());
 pub(super) const HYMO_DEV: &[&str] = &["/dev/hymo_ctl", "/proc/hymo_ctl"];
+static DRIVER_FD: OnceLock<RawFd> = OnceLock::new();
 
 #[repr(C)]
 struct HymoHide {
@@ -25,26 +27,19 @@ const fn ioctl_cmd_write(nr: u32, size: usize) -> u64 {
     (1u32 << 30) as u64 | (size << 16) | ((HYMO_IOC_MAGIC as u64) << 8) | nr as u64
 }
 
-fn find_node() -> Option<RawFd> {
-    for i in HYMO_DEV {
-        if let Ok(dev) = OpenOptions::new().read(true).write(true).open(i) {
-            return Some(dev.as_raw_fd());
-        }
-    }
-
-    None
-}
-
 pub(super) fn send_hide_hymofs<P>(target: P) -> Result<()>
 where
     P: AsRef<Path>,
 {
-    let fd = find_node();
-
-    if fd.is_none() {
-        return Ok(());
-    }
-    let fd = fd.unwrap();
+    let fd = *DRIVER_FD.get_or_init(|| {
+        let mut fd = -1;
+        for i in HYMO_DEV {
+            if let Ok(dev) = OpenOptions::new().read(true).write(true).open(i) {
+                fd = dev.as_raw_fd();
+            }
+        }
+        fd
+    });
 
     let path = CString::new(target.as_ref().as_str()?)?;
     let cmd = HymoHide {
