@@ -10,7 +10,10 @@ use std::{
 use anyhow::{Context, Result, bail};
 use rustix::{
     fs::{Gid, Mode, Uid, chmod, chown},
-    mount::{MountFlags, MountPropagationFlags, mount, mount_bind, mount_change},
+    mount::{
+        MountFlags, MountPropagationFlags, mount, mount_bind, mount_change, mount_move,
+        mount_remount,
+    },
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -18,7 +21,7 @@ use crate::try_umount::send_unmountable;
 use crate::{
     magic_mount::{
         node::{Node, NodeFileType},
-        utils::{clone_symlink, collect_module_files},
+        utils::{clone_symlink, collect_module_files, mount_mirror},
     },
     utils::{ensure_dir_exists, lgetfilecon, lsetfilecon},
 };
@@ -57,7 +60,7 @@ impl MagicMount {
         match self.node.file_type {
             NodeFileType::Symlink => self.symlink(),
             NodeFileType::RegularFile => self.regular_file(),
-            NodeFileType::Directory => Ok({}),
+            NodeFileType::Directory => self.directory(),
             NodeFileType::Whiteout => {
                 log::debug!("file {} is removed", self.path.display());
                 Ok(())
@@ -112,7 +115,7 @@ impl MagicMount {
                 module_path.display(),
                 self.work_dir_path.display(),
             )
-        });
+        })?;
         Ok(())
     }
 
@@ -138,7 +141,6 @@ impl MagicMount {
             let (metadata, path) = utils::metadata_path(&self.path, &self.node)?;
 
             chmod(&self.work_dir_path, Mode::from_raw_mode(metadata.mode()))?;
-
             chown(
                 &self.work_dir_path,
                 Some(Uid::from_raw(metadata.uid())),
@@ -155,6 +157,114 @@ impl MagicMount {
                     self.work_dir_path.display(),
                 )
             })?;
+        }
+
+        if self.path.exists() && !self.node.replace {
+            for entry in self.path.read_dir()?.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let result = {
+                    if let Some(node) = self.node.children.remove(&name) {
+                        if node.skip {
+                            continue;
+                        }
+
+                        MagicMount::new(
+                            &node,
+                            &self.path,
+                            &self.work_dir_path,
+                            has_tmpfs,
+                            #[cfg(any(target_os = "linux", target_os = "android"))]
+                            self.umount,
+                        )
+                        .do_mount()
+                        .with_context(|| format!("magic mount {}/{name}", self.path.display()))
+                    } else if has_tmpfs {
+                        mount_mirror(&self.path, &self.work_dir_path, &entry)
+                            .with_context(|| format!("mount mirror {}/{name}", self.path.display()))
+                    } else {
+                        Ok(())
+                    }
+                };
+
+                if let Err(e) = result {
+                    if has_tmpfs {
+                        return Err(e);
+                    }
+                    log::error!("mount child {}/{name} failed: {e:#?}", self.path.display());
+                }
+            }
+        }
+
+        if self.node.replace {
+            if self.node.module_path.is_none() {
+                bail!(
+                    "dir {} is declared as replaced but it is root!",
+                    self.path.display()
+                );
+            }
+
+            log::debug!("dir {} is replaced", self.path.display());
+        }
+
+        for (name, node) in &self.node.children {
+            if node.skip {
+                continue;
+            }
+
+            if let Err(e) = {
+                MagicMount::new(
+                    &node,
+                    &self.path,
+                    &self.work_dir_path,
+                    has_tmpfs,
+                    #[cfg(any(target_os = "linux", target_os = "android"))]
+                    self.umount,
+                )
+                .do_mount()
+            }
+            .with_context(|| format!("magic mount {}/{name}", self.path.display()))
+            {
+                if has_tmpfs {
+                    return Err(e);
+                }
+
+                log::error!("mount child {}/{name} failed: {e:#?}", self.path.display());
+            }
+        }
+
+        if tmpfs {
+            log::debug!(
+                "moving tmpfs {} -> {}",
+                self.work_dir_path.display(),
+                self.path.display()
+            );
+
+            if let Err(e) = mount_remount(
+                &self.work_dir_path,
+                MountFlags::RDONLY | MountFlags::BIND,
+                "",
+            ) {
+                log::warn!("make dir {} ro: {e:#?}", self.path.display());
+            }
+            mount_move(&self.work_dir_path, &self.path)
+                .context("move self")
+                .with_context(|| {
+                    format!(
+                        "moving tmpfs {} -> {}",
+                        self.work_dir_path.display(),
+                        self.path.display()
+                    )
+                })?;
+            // make private to reduce peer group count
+            if let Err(e) = mount_change(&self.path, MountPropagationFlags::PRIVATE) {
+                log::warn!("make dir {} private: {e:#?}", self.path.display());
+            }
+
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            if self.umount {
+                // tell ksu about this one too
+                let _ = send_unmountable(&self.path);
+            }
         }
         Ok(())
     }
@@ -199,7 +309,15 @@ where
         mount(mount_source, &tmp_dir, "tmpfs", MountFlags::empty(), None).context("mount tmp")?;
         mount_change(&tmp_dir, MountPropagationFlags::PRIVATE).context("make tmp private")?;
 
-        MagicMount::new(&root, Path::new("/"), tmp_dir.as_path(), false, umount).do_mount()?;
+        MagicMount::new(
+            &root,
+            Path::new("/"),
+            tmp_dir.as_path(),
+            false,
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            umount,
+        )
+        .do_mount()?;
     } else {
         log::info!("no modules to mount, skipping!");
     }

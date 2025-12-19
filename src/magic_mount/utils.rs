@@ -1,10 +1,14 @@
 use std::{
-    fs::{self, Metadata, read_link},
-    os::unix::fs::symlink,
+    fs::{self, DirEntry, Metadata, create_dir, read_link},
+    os::unix::fs::{MetadataExt, symlink},
     path::{Path, PathBuf},
 };
 
 use anyhow::{Result, bail};
+use rustix::{
+    fs::{Gid, Mode, Uid, chmod, chown},
+    mount::mount_bind,
+};
 
 use crate::{
     defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
@@ -24,6 +28,52 @@ where
     } else {
         bail!("cannot mount root dir {}!", path.display());
     }
+}
+
+pub fn mount_mirror<P>(path: P, work_dir_path: P, entry: &DirEntry) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref().join(entry.file_name());
+    let work_dir_path = work_dir_path.as_ref().join(entry.file_name());
+    let file_type = entry.file_type()?;
+
+    if file_type.is_file() {
+        log::debug!(
+            "mount mirror file {} -> {}",
+            path.display(),
+            work_dir_path.display()
+        );
+        fs::File::create(&work_dir_path)?;
+        mount_bind(&path, &work_dir_path)?;
+    } else if file_type.is_dir() {
+        log::debug!(
+            "mount mirror dir {} -> {}",
+            path.display(),
+            work_dir_path.display()
+        );
+        create_dir(&work_dir_path)?;
+        let metadata = entry.metadata()?;
+        chmod(&work_dir_path, Mode::from_raw_mode(metadata.mode()))?;
+        chown(
+            &work_dir_path,
+            Some(Uid::from_raw(metadata.uid())),
+            Some(Gid::from_raw(metadata.gid())),
+        )?;
+        lsetfilecon(&work_dir_path, lgetfilecon(&path)?.as_str())?;
+        for entry in path.read_dir()?.flatten() {
+            mount_mirror(&path, &work_dir_path, &entry)?;
+        }
+    } else if file_type.is_symlink() {
+        log::debug!(
+            "create mirror symlink {} -> {}",
+            path.display(),
+            work_dir_path.display()
+        );
+        clone_symlink(&path, &work_dir_path)?;
+    }
+
+    Ok(())
 }
 
 pub fn check_tmpfs<P>(node: &mut Node, path: P) -> (Node, bool)
