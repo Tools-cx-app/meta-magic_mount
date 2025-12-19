@@ -1,5 +1,5 @@
 use std::{
-    fs::{self, DirEntry, Metadata, create_dir, read_link},
+    fs::{self, DirEntry, Metadata, create_dir, create_dir_all, read_link},
     os::unix::fs::{MetadataExt, symlink},
     path::{Path, PathBuf},
 };
@@ -16,7 +16,7 @@ use crate::{
     utils::{lgetfilecon, lsetfilecon, validate_module_id},
 };
 
-pub fn metadata_path<P>(path: P, node: &Node) -> Result<(Metadata, PathBuf)>
+fn metadata_path<P>(path: P, node: &Node) -> Result<(Metadata, PathBuf)>
 where
     P: AsRef<Path>,
 {
@@ -28,6 +28,32 @@ where
     } else {
         bail!("cannot mount root dir {}!", path.display());
     }
+}
+
+pub fn tmpfs_skeleton<P>(path: P, work_dir_path: P, node: &Node) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let (path, work_dir_path) = (path.as_ref(), work_dir_path.as_ref());
+    log::debug!(
+        "creating tmpfs skeleton for {} at {}",
+        path.display(),
+        work_dir_path.display()
+    );
+
+    let _ = create_dir_all(work_dir_path);
+
+    let (metadata, path) = metadata_path(path, node)?;
+
+    chmod(work_dir_path, Mode::from_raw_mode(metadata.mode()))?;
+    chown(
+        work_dir_path,
+        Some(Uid::from_raw(metadata.uid())),
+        Some(Gid::from_raw(metadata.gid())),
+    )?;
+    lsetfilecon(work_dir_path, lgetfilecon(path)?.as_str())?;
+
+    Ok(())
 }
 
 pub fn mount_mirror<P>(path: P, work_dir_path: P, entry: &DirEntry) -> Result<()>

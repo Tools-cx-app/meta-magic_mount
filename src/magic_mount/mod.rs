@@ -2,18 +2,13 @@ mod node;
 mod utils;
 
 use std::{
-    fs::{self, create_dir_all},
-    os::unix::fs::MetadataExt,
+    fs,
     path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result, bail};
-use rustix::{
-    fs::{Gid, Mode, Uid, chmod, chown},
-    mount::{
-        MountFlags, MountPropagationFlags, mount, mount_bind, mount_change, mount_move,
-        mount_remount,
-    },
+use rustix::mount::{
+    MountFlags, MountPropagationFlags, mount, mount_bind, mount_change, mount_move, mount_remount,
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -23,7 +18,7 @@ use crate::{
         node::{Node, NodeFileType},
         utils::{clone_symlink, collect_module_files, mount_mirror},
     },
-    utils::{ensure_dir_exists, lgetfilecon, lsetfilecon},
+    utils::ensure_dir_exists,
 };
 
 struct MagicMount {
@@ -70,7 +65,7 @@ impl MagicMount {
 }
 
 impl MagicMount {
-    fn symlink(&mut self) -> Result<()> {
+    fn symlink(&self) -> Result<()> {
         if let Some(module_path) = &self.node.module_path {
             log::debug!(
                 "create module symlink {} -> {}",
@@ -90,7 +85,7 @@ impl MagicMount {
         }
     }
 
-    fn regular_file(&mut self) -> Result<()> {
+    fn regular_file(&self) -> Result<()> {
         let target = if self.has_tmpfs {
             let _ = std::fs::create_dir_all(&self.work_dir_path);
             &self.work_dir_path
@@ -124,29 +119,12 @@ impl MagicMount {
 
         if !self.has_tmpfs && !tmpfs {
             let (_, tmpfs) = utils::check_tmpfs(&mut self.node, &self.path);
-
             self.has_tmpfs = tmpfs;
         }
         let has_tmpfs = tmpfs || self.has_tmpfs;
 
         if has_tmpfs {
-            log::debug!(
-                "creating tmpfs skeleton for {} at {}",
-                self.path.display(),
-                self.work_dir_path.display()
-            );
-
-            let _ = create_dir_all(&self.work_dir_path);
-
-            let (metadata, path) = utils::metadata_path(&self.path, &self.node)?;
-
-            chmod(&self.work_dir_path, Mode::from_raw_mode(metadata.mode()))?;
-            chown(
-                &self.work_dir_path,
-                Some(Uid::from_raw(metadata.uid())),
-                Some(Gid::from_raw(metadata.gid())),
-            )?;
-            lsetfilecon(&self.work_dir_path, lgetfilecon(path)?.as_str())?;
+            utils::tmpfs_skeleton(&self.path, &self.work_dir_path, &self.node)?;
         }
 
         if tmpfs {
@@ -160,39 +138,7 @@ impl MagicMount {
         }
 
         if self.path.exists() && !self.node.replace {
-            for entry in self.path.read_dir()?.flatten() {
-                let name = entry.file_name().to_string_lossy().to_string();
-                let result = {
-                    if let Some(node) = self.node.children.remove(&name) {
-                        if node.skip {
-                            continue;
-                        }
-
-                        MagicMount::new(
-                            &node,
-                            &self.path,
-                            &self.work_dir_path,
-                            has_tmpfs,
-                            #[cfg(any(target_os = "linux", target_os = "android"))]
-                            self.umount,
-                        )
-                        .do_mount()
-                        .with_context(|| format!("magic mount {}/{name}", self.path.display()))
-                    } else if has_tmpfs {
-                        mount_mirror(&self.path, &self.work_dir_path, &entry)
-                            .with_context(|| format!("mount mirror {}/{name}", self.path.display()))
-                    } else {
-                        Ok(())
-                    }
-                };
-
-                if let Err(e) = result {
-                    if has_tmpfs {
-                        return Err(e);
-                    }
-                    log::error!("mount child {}/{name} failed: {e:#?}", self.path.display());
-                }
-            }
+            self.mount_path(has_tmpfs)?;
         }
 
         if self.node.replace {
@@ -212,8 +158,8 @@ impl MagicMount {
             }
 
             if let Err(e) = {
-                MagicMount::new(
-                    &node,
+                Self::new(
+                    node,
                     &self.path,
                     &self.work_dir_path,
                     has_tmpfs,
@@ -246,15 +192,13 @@ impl MagicMount {
             ) {
                 log::warn!("make dir {} ro: {e:#?}", self.path.display());
             }
-            mount_move(&self.work_dir_path, &self.path)
-                .context("move self")
-                .with_context(|| {
-                    format!(
-                        "moving tmpfs {} -> {}",
-                        self.work_dir_path.display(),
-                        self.path.display()
-                    )
-                })?;
+            mount_move(&self.work_dir_path, &self.path).with_context(|| {
+                format!(
+                    "moving tmpfs {} -> {}",
+                    self.work_dir_path.display(),
+                    self.path.display()
+                )
+            })?;
             // make private to reduce peer group count
             if let Err(e) = mount_change(&self.path, MountPropagationFlags::PRIVATE) {
                 log::warn!("make dir {} private: {e:#?}", self.path.display());
@@ -266,6 +210,46 @@ impl MagicMount {
                 let _ = send_unmountable(&self.path);
             }
         }
+        Ok(())
+    }
+}
+
+impl MagicMount {
+    fn mount_path(&mut self, has_tmpfs: bool) -> Result<()> {
+        for entry in self.path.read_dir()?.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let result = {
+                if let Some(node) = self.node.children.remove(&name) {
+                    if node.skip {
+                        continue;
+                    }
+
+                    Self::new(
+                        &node,
+                        &self.path,
+                        &self.work_dir_path,
+                        has_tmpfs,
+                        #[cfg(any(target_os = "linux", target_os = "android"))]
+                        self.umount,
+                    )
+                    .do_mount()
+                    .with_context(|| format!("magic mount {}/{name}", self.path.display()))
+                } else if has_tmpfs {
+                    mount_mirror(&self.path, &self.work_dir_path, &entry)
+                        .with_context(|| format!("mount mirror {}/{name}", self.path.display()))
+                } else {
+                    Ok(())
+                }
+            };
+
+            if let Err(e) = result {
+                if has_tmpfs {
+                    return Err(e);
+                }
+                log::error!("mount child {}/{name} failed: {e:#?}", self.path.display());
+            }
+        }
+
         Ok(())
     }
 }
