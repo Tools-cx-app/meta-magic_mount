@@ -7,11 +7,13 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
-use rustix::mount::{MountFlags, MountPropagationFlags, mount, mount_change};
+use rustix::mount::{MountFlags, MountPropagationFlags, mount, mount_bind, mount_change};
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use crate::try_umount::send_unmountable;
 use crate::{
     magic_mount::{
-        node::Node,
+        node::{Node, NodeFileType},
         utils::{clone_symlink, collect_module_files},
     },
     utils::ensure_dir_exists,
@@ -47,7 +49,17 @@ impl MagicMount {
         }
     }
 
-    fn do_mount(&self) {}
+    fn do_mount(&mut self) -> Result<()> {
+        match self.node.file_type {
+            NodeFileType::Symlink => self.symlink(),
+            NodeFileType::RegularFile => self.regular_file(),
+            NodeFileType::Directory => Ok({}),
+            NodeFileType::Whiteout => {
+                log::debug!("file {} is removed", self.path.display());
+                Ok(())
+            }
+        }
+    }
 }
 
 impl MagicMount {
@@ -69,6 +81,35 @@ impl MagicMount {
         } else {
             bail!("cannot mount root symlink {}!", self.path.display());
         }
+    }
+
+    fn regular_file(&mut self) -> Result<()> {
+        let target = if self.has_tmpfs {
+            let _ = std::fs::create_dir_all(&self.work_dir_path);
+            &self.work_dir_path
+        } else {
+            &self.path
+        };
+
+        if self.node.module_path.is_none() {
+            bail!("cannot mount root file {}!", self.path.display());
+        }
+
+        let module_path = &self.node.module_path.clone().unwrap();
+
+        mount_bind(module_path, target).with_context(|| {
+            #[cfg(any(target_os = "linux", target_os = "android"))]
+            if self.umount {
+                // tell ksu about this mount
+                let _ = send_unmountable(target);
+            }
+            format!(
+                "mount module file {} -> {}",
+                module_path.display(),
+                self.work_dir_path.display(),
+            )
+        });
+        Ok(())
     }
 }
 
