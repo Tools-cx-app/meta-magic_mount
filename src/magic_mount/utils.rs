@@ -1,16 +1,30 @@
 use std::{
-    fs::{self, read_link},
+    fs::{self, Metadata, read_link},
     os::unix::fs::symlink,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 
 use crate::{
     defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
     magic_mount::node::{Node, NodeFileType},
     utils::{lgetfilecon, lsetfilecon, validate_module_id},
 };
+
+pub fn metadata_path<P>(path: P, node: &Node) -> Result<(Metadata, PathBuf)>
+where
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+    if path.exists() {
+        Ok((path.metadata()?, path.to_path_buf()))
+    } else if let Some(module_path) = &node.module_path {
+        Ok((module_path.metadata()?, module_path.clone()))
+    } else {
+        bail!("cannot mount root dir {}!", path.display());
+    }
+}
 
 pub fn check_tmpfs<P>(node: &mut Node, path: P) -> (Node, bool)
 where
@@ -155,4 +169,3 @@ where
     );
     Ok(())
 }
-

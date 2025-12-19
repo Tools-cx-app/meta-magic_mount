@@ -2,12 +2,16 @@ mod node;
 mod utils;
 
 use std::{
-    fs,
+    fs::{self, create_dir_all},
+    os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result, bail};
-use rustix::mount::{MountFlags, MountPropagationFlags, mount, mount_bind, mount_change};
+use rustix::{
+    fs::{Gid, Mode, Uid, chmod, chown},
+    mount::{MountFlags, MountPropagationFlags, mount, mount_bind, mount_change},
+};
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use crate::try_umount::send_unmountable;
@@ -16,7 +20,7 @@ use crate::{
         node::{Node, NodeFileType},
         utils::{clone_symlink, collect_module_files},
     },
-    utils::ensure_dir_exists,
+    utils::{ensure_dir_exists, lgetfilecon, lsetfilecon},
 };
 
 struct MagicMount {
@@ -111,6 +115,49 @@ impl MagicMount {
         });
         Ok(())
     }
+
+    fn directory(&mut self) -> Result<()> {
+        let tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
+
+        if !self.has_tmpfs && !tmpfs {
+            let (_, tmpfs) = utils::check_tmpfs(&mut self.node, &self.path);
+
+            self.has_tmpfs = tmpfs;
+        }
+        let has_tmpfs = tmpfs || self.has_tmpfs;
+
+        if has_tmpfs {
+            log::debug!(
+                "creating tmpfs skeleton for {} at {}",
+                self.path.display(),
+                self.work_dir_path.display()
+            );
+
+            let _ = create_dir_all(&self.work_dir_path);
+
+            let (metadata, path) = utils::metadata_path(&self.path, &self.node)?;
+
+            chmod(&self.work_dir_path, Mode::from_raw_mode(metadata.mode()))?;
+
+            chown(
+                &self.work_dir_path,
+                Some(Uid::from_raw(metadata.uid())),
+                Some(Gid::from_raw(metadata.gid())),
+            )?;
+            lsetfilecon(&self.work_dir_path, lgetfilecon(path)?.as_str())?;
+        }
+
+        if tmpfs {
+            mount_bind(&self.work_dir_path, &self.work_dir_path).with_context(|| {
+                format!(
+                    "creating tmpfs for {} at {}",
+                    self.path.display(),
+                    self.work_dir_path.display(),
+                )
+            })?;
+        }
+        Ok(())
+    }
 }
 
 pub fn magic_mount<P>(
@@ -124,7 +171,7 @@ pub fn magic_mount<P>(
 where
     P: AsRef<Path>,
 {
-    if let Some(root) = collect_module_files(module_dir, extra_partitions) {
+    if let Some(root) = collect_module_files(module_dir, extra_partitions)? {
         log::debug!("collected: {root}");
         std::thread::Builder::new()
             .name("GetTree".to_string())
@@ -151,6 +198,8 @@ where
 
         mount(mount_source, &tmp_dir, "tmpfs", MountFlags::empty(), None).context("mount tmp")?;
         mount_change(&tmp_dir, MountPropagationFlags::PRIVATE).context("make tmp private")?;
+
+        MagicMount::new(&root, Path::new("/"), tmp_dir.as_path(), false, umount).do_mount()?;
     } else {
         log::info!("no modules to mount, skipping!");
     }
