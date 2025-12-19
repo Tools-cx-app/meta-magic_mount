@@ -1,6 +1,16 @@
-use std::path::Path;
+use std::{
+    fs::{self, read_link},
+    os::unix::fs::symlink,
+    path::Path,
+};
 
-use crate::magic_mount::node::{Node, NodeFileType};
+use anyhow::Result;
+
+use crate::{
+    defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
+    magic_mount::node::{Node, NodeFileType},
+    utils::{lgetfilecon, lsetfilecon, validate_module_id},
+};
 
 pub fn check_tmpfs<P>(node: &mut Node, path: P) -> (Node, bool)
 where
@@ -40,7 +50,10 @@ where
     (node.clone(), ret_tmpfs)
 }
 
-pub fn collect_module_files(module_dir: &Path, extra_partitions: &[String]) -> Result<Option<Node>> {
+pub fn collect_module_files(
+    module_dir: &Path,
+    extra_partitions: &[String],
+) -> Result<Option<Node>> {
     let mut root = Node::new_root("");
     let mut system = Node::new_root("system");
     let module_root = module_dir;
@@ -126,3 +139,20 @@ pub fn collect_module_files(module_dir: &Path, extra_partitions: &[String]) -> R
         Ok(None)
     }
 }
+
+pub fn clone_symlink<S>(src: S, dst: S) -> Result<()>
+where
+    S: AsRef<Path>,
+{
+    let src_symlink = read_link(src.as_ref())?;
+    symlink(&src_symlink, dst.as_ref())?;
+    lsetfilecon(dst.as_ref(), lgetfilecon(src.as_ref())?.as_str())?;
+    log::debug!(
+        "clone symlink {} -> {}({})",
+        dst.as_ref().display(),
+        dst.as_ref().display(),
+        src_symlink.display()
+    );
+    Ok(())
+}
+
