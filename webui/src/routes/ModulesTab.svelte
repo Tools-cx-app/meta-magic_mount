@@ -6,11 +6,18 @@
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './ModulesTab.css';
+  
+  import '@material/web/textfield/outlined-text-field.js';
+  import '@material/web/icon/icon.js';
+  import '@material/web/ripple/ripple.js';
+  import '@material/web/iconbutton/filled-tonal-icon-button.js';
+
   let searchQuery = $state('');
   let expandedId = $state(null);
   onMount(() => {
     store.loadModules();
   });
+
   let filteredModules = $derived(store.modules.filter(m => {
     const q = searchQuery.toLowerCase();
     const matchSearch = m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
@@ -19,97 +26,138 @@
   function toggleExpand(id) {
     expandedId = expandedId === id ? null : id;
   }
+
   function handleKeydown(e, id) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       toggleExpand(id);
     }
   }
+  
+  function handleInput(e) {
+      searchQuery = e.target.value;
+  }
 </script>
-<div class="md3-card desc-card">
-  <p class="desc-text">
-    {store.L.modules?.desc || "Modules are strictly managed by Magic Mount strategy."}
-  </p>
-</div>
-<div class="search-container">
-  <svg class="search-icon" viewBox="0 0 24 24"><path d={ICONS.search} /></svg>
-  <input 
-    type="text" 
-    class="search-input" 
-    placeholder={store.L.modules?.searchPlaceholder}
-    bind:value={searchQuery}
-  />
-</div>
-{#if store.loading.modules}
-  <div class="rules-list">
-    {#each Array(5) as _}
-      <div class="rule-card">
-        <div class="rule-info">
-          <div class="skeleton-group">
-            <Skeleton width="60%" height="20px" />
-            <Skeleton width="40%" height="14px" />
-          </div>
+
+<div class="modules-container">
+  <div class="desc-card">
+    <div class="desc-icon">
+        <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.info} /></svg></md-icon>
+    </div>
+    <p class="desc-text">
+      {store.L.modules?.desc ||
+        "Modules are strictly managed by Magic Mount strategy."}
+    </p>
+  </div>
+
+  <div class="search-section">
+    <md-outlined-text-field 
+        label={store.L.modules?.searchPlaceholder ||
+            "Search modules..."}
+        value={searchQuery}
+        oninput={handleInput}
+        class="search-field"
+    >
+        <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.search} /></svg></md-icon>
+    </md-outlined-text-field>
+  </div>
+
+  {#if store.loading.modules}
+    <div class="modules-list">
+      {#each Array(5) as _}
+        <div class="module-card skeleton-card">
+          <Skeleton width="60%" height="20px" />
+          
+          <Skeleton width="40%" height="14px" style="margin-top: 8px;" />
         </div>
+      {/each}
+    </div>
+  {:else if filteredModules.length === 0}
+    <div class="empty-state">
+      <div class="empty-icon">
+          <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.modules} /></svg></md-icon>
       </div>
-    {/each}
-  </div>
-{:else if filteredModules.length === 0}
-  <div class="empty-state">
-    {store.modules.length === 0 ? (store.L.modules?.empty ?? "No modules found") : "No matching modules"}
-  </div>
-{:else}
-  <div class="rules-list">
-    {#each filteredModules as mod (mod.id)}
-      <div 
-        class="rule-card" 
-        class:expanded={expandedId === mod.id} 
-        class:unmounted={!mod.is_mounted}
-      >
+      <p>{store.modules.length === 0 ?
+        (store.L.modules?.empty || "No modules found") : "No matching modules"}</p>
+    </div>
+  {:else}
+    <div class="modules-list">
+      {#each filteredModules as mod (mod.id)}
         <div 
-            class="rule-main"
-            onclick={() => toggleExpand(mod.id)}
-            onkeydown={(e) => handleKeydown(e, mod.id)}
-            role="button"
-            tabindex="0"
+          class="module-card" 
+          class:expanded={expandedId === mod.id}
+          class:unmounted={!mod.is_mounted}
         >
-          <div class="rule-info">
-            <div class="info-col">
+          <div 
+          
+             class="card-main clickable"
+              onclick={() => toggleExpand(mod.id)}
+              onkeydown={(e) => handleKeydown(e, mod.id)}
+              role="button"
+              tabindex="0"
+          >
+            <md-ripple></md-ripple>
+            
+            <div class="module-info">
               <span class="module-name">{mod.name}</span>
-              <span class="module-id">{mod.id} <span class="version-tag">{mod.version}</span></span>
+              <div class="module-meta-row">
+                  <span class="module-id">{mod.id}</span>
+                  <span class="version-tag">{mod.version}</span>
+              </div>
+            </div>
+     
+        
+            <div class="status-badge" class:magic={mod.is_mounted} class:skipped={!mod.is_mounted}>
+                {mod.is_mounted ? 'Magic' : 'Skipped'}
             </div>
           </div>
-          {#if mod.is_mounted}
-             <div class="mode-badge badge-magic">Magic</div>
-          {:else}
-             <div class="mode-badge badge-none">Skipped</div>
+
+          {#if expandedId === mod.id}
+            <div class="card-details" transition:slide={{ duration: 200 }}>
+              <div class="detail-row">
+                  <span class="detail-label">Author</span>
+            
+                  <span class="detail-value">{mod.author || 'Unknown'}</span>
+              </div>
+              <div class="detail-row description">
+                  <span class="detail-label">Description</span>
+                  <p class="detail-value">{mod.description || 'No description'}</p>
+              </div>
+              
+              {#if !mod.is_mounted}
+                  <div class="status-alert">
+                      <md-icon class="alert-icon"><svg viewBox="0 0 24 24"><path d={ICONS.info} /></svg></md-icon>
+        
+                      <span>
+                          {#if mod.disabledByFlag}
+                              Disabled via Manager or 'disable' file.
+                          {:else if mod.skipMount}
+                              Skipped via 'skip_mount' flag.
+                          {:else}
+                              Not mounted.
+                          {/if}
+                      </span>
+                  </div>
+              {/if}
+            </div>
           {/if}
         </div>
-        {#if expandedId === mod.id}
-          <div class="rule-details" transition:slide={{ duration: 200 }}>
-            <p class="module-desc">{mod.description || 'No description'}</p>
-            <p class="module-meta">Author: {mod.author || 'Unknown'}</p>
-            {#if !mod.is_mounted}
-                <div class="status-alert">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path d={ICONS.info} fill="currentColor"/></svg>
-                    <span>
-                        {#if mod.disabledByFlag}
-                            Disabled via Manager or 'disable' file.
-                        {:else if mod.skipMount}
-                            Skipped via 'skip_mount' flag.
-                        {:else}
-                            Not mounted.
-                        {/if}
-                    </span>
-                </div>
-            {/if}
-          </div>
-        {/if}
-      </div>
-    {/each}
-  </div>
-{/if}
+      {/each}
+    </div>
+  {/if}
+</div>
+
 <BottomActions>
-  <button class="btn-tonal" onclick={() => store.loadModules()} disabled={store.loading.modules} title={store.L.modules?.reload}>
-    <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.refresh} fill="currentColor"/></svg>
-  </button>
+  <div class="spacer"></div>
+ 
+  <md-filled-tonal-icon-button 
+    onclick={() => store.loadModules()} 
+    disabled={store.loading.modules}
+    title={store.L.modules?.reload || "Refresh"}
+    role="button"
+    tabindex="0"
+    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') store.loadModules(); }}
+  >
+    <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.refresh} /></svg></md-icon>
+  </md-filled-tonal-icon-button>
 </BottomActions>

@@ -12,6 +12,10 @@
   -ms-overflow-style: none;
   gap: 8px;
   z-index: 100;
+  transition: padding-bottom 0.3s ease; 
+}
+.bottom-nav.fix-padding {
+  padding-bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 48px);
 }
 .bottom-nav::-webkit-scrollbar {
   display: none;

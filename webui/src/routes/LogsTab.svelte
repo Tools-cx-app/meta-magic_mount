@@ -5,22 +5,31 @@
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './LogsTab.css';
+  
+  import '@material/web/checkbox/checkbox.js';
+  import '@material/web/iconbutton/filled-tonal-icon-button.js';
+  import '@material/web/icon/icon.js';
+
   let searchLogQuery = $state('');
   let filterLevel = $state('all'); 
   let logContainer = $state();
   let autoRefresh = $state(false);
   let refreshInterval;
   let userHasScrolledUp = $state(false);
+
   let filteredLogs = $derived(store.logs.filter(line => {
     const text = typeof line === 'string' ? line : line.text;
     const type = typeof line === 'string' ? 'info' : line.type;
+    
     const matchesSearch = text.toLowerCase().includes(searchLogQuery.toLowerCase());
     let matchesLevel = true;
     if (filterLevel !== 'all') {
       matchesLevel = type === filterLevel;
     }
     return matchesSearch && matchesLevel;
+  
   }));
+
   async function scrollToBottom() {
     if (logContainer) { 
       await tick();
@@ -28,12 +37,14 @@
       userHasScrolledUp = false;
     }
   }
+
   function handleScroll(e) {
     const target = e.target;
     const { scrollTop, scrollHeight, clientHeight } = target;
     const distanceToBottom = scrollHeight - scrollTop - clientHeight;
     userHasScrolledUp = distanceToBottom > 50;
   }
+
   async function refreshLogs(silent = false) {
     await store.loadLogs(silent);
     if (!silent && !userHasScrolledUp) {
@@ -42,9 +53,10 @@
       }
     }
   }
+
   async function copyLogs() {
     if (filteredLogs.length === 0) return;
-    const text = filteredLogs.map(l => l.text || l).join('\n');
+    const text = filteredLogs.map(l => (typeof l === 'string' ? l : l.text)).join('\n');
     try {
       await navigator.clipboard.writeText(text);
       store.showToast(store.L.logs.copySuccess, 'success');
@@ -52,6 +64,7 @@
       store.showToast(store.L.logs.copyFail, 'error');
     }
   }
+
   $effect(() => {
     if (autoRefresh) {
       refreshLogs(true); 
@@ -69,72 +82,111 @@
   onDestroy(() => {
     if (refreshInterval) clearInterval(refreshInterval);
   });
+  function toggleAutoRefresh(e) {
+      autoRefresh = e.target.checked;
+  }
 </script>
-<div class="logs-controls">
-  <svg viewBox="0 0 24 24" width="20" height="20" class="log-search-icon">
-    <path d={ICONS.search} />
-  </svg>
-  <input 
-    type="text" 
-    class="log-search-input" 
-    placeholder={store.L.logs.searchPlaceholder}
-    bind:value={searchLogQuery}
-  />
-  <div class="log-auto-group">
-    <input type="checkbox" id="auto-refresh" bind:checked={autoRefresh} class="log-auto-checkbox" />
-    <label for="auto-refresh" class="log-auto-label">Auto</label>
+
+<div class="logs-container-page">
+  <div class="logs-controls">
+    <div class="search-wrapper">
+        <md-icon class="search-icon"><svg viewBox="0 0 24 24"><path d={ICONS.search} /></svg></md-icon>
+        <input 
+            type="text" 
+            class="log-search-input" 
+            placeholder={store.L.logs.searchPlaceholder}
+            bind:value={searchLogQuery}
+        />
+    </div>
+    
+ 
+    <div class="controls-right">
+        <div class="log-auto-group">
+            <md-checkbox 
+                id="auto-refresh" 
+                checked={autoRefresh} 
+                onchange={toggleAutoRefresh}
+                touch-target="wrapper"
+        
+            ></md-checkbox>
+            <label for="auto-refresh" class="log-auto-label">Auto</label>
+        </div>
+        
+        <div class="log-divider"></div>
+        
+        <select class="log-filter-select" bind:value={filterLevel}>
+            <option value="all">{store.L.logs.levels.all}</option>
+            <option value="info">{store.L.logs.levels.info}</option>
+            <option value="warn">{store.L.logs.levels.warn}</option>
+            <option value="error">{store.L.logs.levels.error}</option>
+        </select>
+    </div>
   </div>
-  <div class="log-divider"></div>
-  <select class="log-filter-select" bind:value={filterLevel}>
-    <option value="all">{store.L.logs.levels.all}</option>
-    <option value="info">{store.L.logs.levels.info}</option>
-    <option value="warn">{store.L.logs.levels.warn}</option>
-    <option value="error">{store.L.logs.levels.error}</option>
-  </select>
+
+  <div class="log-viewer" bind:this={logContainer} onscroll={handleScroll}>
+    {#if store.loading.logs && !autoRefresh && filteredLogs.length === 0}
+        <div class="log-skeleton-container">
+        {#each Array(10) as _, i}
+            <Skeleton width="{60 + (i % 3) * 20}%" height="14px" />
+        {/each}
+       
+        </div>
+    {:else if filteredLogs.length === 0}
+        <div class="log-empty-state">
+        {store.logs.length === 0 ?
+            store.L.logs.empty : "No matching logs"}
+        </div>
+    {:else}
+        {#each filteredLogs as line}
+        <div class="log-entry">
+            {#if typeof line === 'string'}
+                <span class="log-info">{line}</span>
+            {:else}
+                <span class="log-{line.type}">{line.text}</span>
+  
+            {/if}
+        </div>
+        {/each}
+        <div class="log-footer">
+        — End of Logs —
+        </div>
+    {/if}
+
+    {#if userHasScrolledUp}
+        <button 
+        class="scroll-fab" 
+        onclick={scrollToBottom}
+        title="Scroll to bottom"
+        >
+        <svg viewBox="0 0 24 24" class="scroll-icon"><path d="M11 4h2v12l5.5-5.5 1.42 1.42L12 19.84l-7.92-7.92L5.5 10.5 11 16V4z" fill="currentColor"/></svg>
+        Latest
+        </button>
+    {/if}
+  </div>
 </div>
-<div class="log-container" bind:this={logContainer} onscroll={handleScroll}>
-  {#if store.loading.logs}
-    <div class="log-skeleton-container">
-      {#each Array(10) as _, i}
-        <Skeleton width="{60 + (i % 3) * 20}%" height="14px" />
-      {/each}
-    </div>
-  {:else if filteredLogs.length === 0}
-    <div class="log-empty-state">
-      {store.logs.length === 0 ? store.L.logs.empty : "No matching logs"}
-    </div>
-  {:else}
-    {#each filteredLogs as line}
-      <span class="log-entry">
-        <span class="log-{line.type}">{line.text}</span>
-      </span>
-    {/each}
-    <div class="log-footer">
-      — Showing last 1000 lines —
-    </div>
-  {/if}
-  {#if userHasScrolledUp}
-    <button 
-      class="scroll-fab" 
-      onclick={scrollToBottom}
-      title="Scroll to bottom"
-    >
-      <svg viewBox="0 0 24 24" class="scroll-icon"><path d="M11 4h2v12l5.5-5.5 1.42 1.42L12 19.84l-7.92-7.92L5.5 10.5 11 16V4z" fill="currentColor"/></svg>
-      Latest
-    </button>
-  {/if}
-</div>
+
 <BottomActions>
-  <button class="btn-tonal" onclick={copyLogs} disabled={filteredLogs.length === 0} title={store.L.logs.copy}>
-    <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.copy} fill="currentColor"/></svg>
-  </button>
+  <md-filled-tonal-icon-button 
+    onclick={copyLogs} 
+    disabled={filteredLogs.length === 0} 
+    title={store.L.logs.copy}
+    role="button"
+    tabindex="0"
+    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') copyLogs(); }}
+  >
+    <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.copy} /></svg></md-icon>
+  </md-filled-tonal-icon-button>
+
   <div class="spacer"></div>
-  <button 
-    class="btn-tonal" 
+
+  <md-filled-tonal-icon-button 
     onclick={() => refreshLogs(false)} 
     disabled={store.loading.logs}
     title={store.L.logs.refresh}
+    role="button"
+    tabindex="0"
+    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') refreshLogs(false); }}
   >
-    <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.refresh} fill="currentColor"/></svg>
-  </button>
+    <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.refresh} /></svg></md-icon>
+  </md-filled-tonal-icon-button>
 </BottomActions>

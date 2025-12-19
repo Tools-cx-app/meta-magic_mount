@@ -5,7 +5,14 @@
     "saving": "保存中...",
     "themeAuto": "自动 (跟随系统)",
     "themeLight": "浅色模式",
-    "themeDark": "深色模式"
+    "themeDark": "深色模式",
+    "cancel": "取消",
+    "reboot": "重启",
+    "rebootTitle": "重启系统？",
+    "rebootConfirm": "确定要重启设备吗？",
+    "rebootFailed": "重启失败",
+    "resetSuccess": "配置已重置",
+    "resetFailed": "重置失败"
   },
   "tabs": {
     "status": "状态",
@@ -34,10 +41,13 @@
     "umountOff": "默认",
     "umountOn": "强制卸载",
     "moduleDir": "模块路径",
+    "moduleDirDesc": "设置模块存储目录",
     "tempDir": "临时挂载点",
     "mountSource": "挂载源 (Mount Source)",
+    "mountSourceDesc": "全局挂载源命名空间 (如 KSU)",
     "logFile": "日志文件",
     "partitions": "额外分区",
+    "partitionsDesc": "添加需要挂载的分区",
     "autoPlaceholder": "留空自动选择",
     "reload": "重载配置",
     "save": "保存配置",
@@ -47,7 +57,8 @@
     "loadError": "加载配置失败",
     "loadDefault": "已加载默认配置",
     "saveSuccess": "配置保存成功",
-    "saveFailed": "保存配置失败"
+    "saveFailed": "保存配置失败",
+    "fixBottomNav": "修复底部导航遮挡"
   },
   "modules": {
     "title": "挂载列表",

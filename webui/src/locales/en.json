@@ -7,7 +7,14 @@
     "language": "Language",
     "themeAuto": "Auto (System)",
     "themeLight": "Light Mode",
-    "themeDark": "Dark Mode"
+    "themeDark": "Dark Mode",
+    "cancel": "Cancel",
+    "reboot": "Reboot",
+    "rebootTitle": "Reboot System?",
+    "rebootConfirm": "Are you sure you want to reboot the device?",
+    "rebootFailed": "Reboot failed",
+    "resetSuccess": "Config reset successfully",
+    "resetFailed": "Failed to reset config"
   },
   "tabs": {
     "status": "Status",
@@ -36,10 +43,13 @@
     "umountOff": "Default",
     "umountOn": "Enabled",
     "moduleDir": "Module Directory",
+    "moduleDirDesc": "Set the directory where modules are stored",
     "tempDir": "Temp Directory",
     "mountSource": "Mount Source",
+    "mountSourceDesc": "Global mount source namespace (e.g. KSU)",
     "logFile": "Log File",
     "partitions": "Extra Partitions",
+    "partitionsDesc": "Add partitions to mount",
     "autoPlaceholder": "Auto-select if empty",
     "reload": "Reload",
     "save": "Save Config",
@@ -49,7 +59,8 @@
     "loadError": "Failed to load config",
     "loadDefault": "Loaded default config",
     "saveSuccess": "Configuration saved",
-    "saveFailed": "Failed to save configuration"
+    "saveFailed": "Failed to save configuration",
+    "fixBottomNav": "Fix Bottom Nav"
   },
   "modules": {
     "title": "Active Modules",

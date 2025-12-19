@@ -17,6 +17,8 @@ const createStore = () => {
   let loadedLocale = $state(null);
   let toast = $state({ id: 'init', text: '', type: 'info', visible: false });
 
+  let fixBottomNav = $state(false);
+
   const availableLanguages = Object.entries(modulesAny).map(([path, moduleData]) => {
     const mod = /** @type {any} */ (moduleData);
     const match = path.match(/\/([^/]+)\.json$/);
@@ -38,11 +40,13 @@ const createStore = () => {
   let storage = $state({ used: '-', size: '-', percent: '0%', type: null, hymofs_available: false });
   let systemInfo = $state({ kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] });
   let activePartitions = $state([]);
+  let diagnostics = $state([]);
 
   let loadingConfig = $state(false);
   let loadingModules = $state(false);
   let loadingLogs = $state(false);
   let loadingStatus = $state(false);
+  let loadingDiagnostics = $state(false);
   
   let savingConfig = $state(false);
   let savingModules = $state(false);
@@ -72,6 +76,11 @@ const createStore = () => {
     theme = t;
     localStorage.setItem('mm-theme', t);
     applyTheme();
+  }
+
+  function toggleBottomNavFix() {
+    fixBottomNav = !fixBottomNav;
+    localStorage.setItem('mm-fix-nav', String(fixBottomNav));
   }
 
   function applyTheme() {
@@ -107,6 +116,11 @@ const createStore = () => {
         theme = savedTheme;
     }
 
+    const savedNavFix = localStorage.getItem('mm-fix-nav');
+    if (savedNavFix === 'true') {
+        fixBottomNav = true;
+    }
+
     if (!darkModeQuery && typeof window !== 'undefined') {
         darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
         isSystemDark = darkModeQuery.matches;
@@ -139,6 +153,18 @@ const createStore = () => {
       showToast('Failed to load config', 'error');
     }
     loadingConfig = false;
+  }
+  
+  async function resetConfig() {
+      loadingConfig = true;
+      try {
+          config = { ...DEFAULT_CONFIG }; 
+          await saveConfig();
+          showToast(L.common?.resetSuccess || 'Config Reset', 'success');
+      } catch(e) {
+          showToast(L.common?.resetFailed || 'Failed to reset', 'error');
+      }
+      loadingConfig = false;
   }
 
   async function saveConfig() {
@@ -185,12 +211,14 @@ const createStore = () => {
 
   async function loadStatus() {
     loadingStatus = true;
+    loadingDiagnostics = true;
     try {
       const baseDevice = await API.getDeviceStatus();
       version = await API.getVersion();
       storage = await API.getStorageUsage();
       systemInfo = await API.getSystemInfo();
       activePartitions = systemInfo.activeMounts || [];
+      diagnostics = []; 
       
       device = {
         ...baseDevice,
@@ -203,6 +231,15 @@ const createStore = () => {
       }
     } catch (e) {}
     loadingStatus = false;
+    loadingDiagnostics = false;
+  }
+
+  async function rebootDevice() {
+    try {
+      await API.reboot();
+    } catch(e) {
+      showToast(L.common?.rebootFailed || 'Reboot failed', 'error');
+    }
   }
 
   return {
@@ -219,10 +256,14 @@ const createStore = () => {
     setLang,
     init,
 
+    get fixBottomNav() { return fixBottomNav; },
+    toggleBottomNavFix,
+
     get config() { return config; },
     set config(v) { config = v; },
     loadConfig,
     saveConfig,
+    resetConfig,
 
     get modules() { return modules; },
     set modules(v) { modules = v; },
@@ -238,14 +279,17 @@ const createStore = () => {
     get storage() { return storage; },
     get systemInfo() { return systemInfo; },
     get activePartitions() { return activePartitions; },
+    get diagnostics() { return diagnostics; },
     loadStatus,
+    rebootDevice,
 
     get loading() {
       return {
         config: loadingConfig,
         modules: loadingModules,
         logs: loadingLogs,
-        status: loadingStatus
+        status: loadingStatus,
+        diagnostics: loadingDiagnostics
       };
     },
     get saving() {

@@ -5,6 +5,12 @@
   import { ICONS } from '../lib/constants';
   import './InfoTab.css';
   import Skeleton from '../components/Skeleton.svelte';
+  import MagicLogo from '../components/MagicLogo.svelte';
+
+  import '@material/web/button/filled-tonal-button.js';
+  import '@material/web/icon/icon.js';
+  import '@material/web/list/list.js';
+  import '@material/web/list/list-item.js';
 
   const REPO_OWNER = 'Tools-cx-app';
   const REPO_NAME = 'meta-magic_mount';
@@ -25,7 +31,6 @@
     }
     await fetchContributors();
   });
-
   async function fetchContributors() {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -51,27 +56,25 @@
         const hasBotName = user.login.toLowerCase().includes('bot');
         return !isBotType && !hasBotName;
       });
-      
       const detailPromises = filteredList.map(async (user) => {
         try {
             const detailRes = await fetch(user.url);
             if (detailRes.ok) {
                 const detail = await detailRes.json();
                 return { ...user, bio: detail.bio, name: detail.name || user.login };
+          
             }
         } catch (e) {
             console.warn('Failed to fetch detail for', user.login);
         }
         return user;
       });
-
       contributors = await Promise.all(detailPromises);
       
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         data: contributors,
         timestamp: Date.now()
       }));
-
     } catch (e) {
       console.error(e);
       error = true;
@@ -89,53 +92,65 @@
 <div class="info-container">
   
   <div class="project-header">
+    <div class="app-logo">
+        <MagicLogo />
+    </div>
     <span class="app-name">{store.L.common.appName}</span>
     <span class="app-version">{version}</span>
   </div>
 
-  <div class="action-grid">
-    <a href={`https://github.com/${REPO_OWNER}/${REPO_NAME}`} 
-       class="action-card" 
-       onclick={(e) => handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`)}>
-        <svg viewBox="0 0 24 24" class="action-icon"><path d={ICONS.github} /></svg>
-        <span class="action-label">{store.L.info.projectLink}</span>
-    </a>
+  <div class="action-buttons">
+    <md-filled-tonal-button 
+       class="action-btn"
+       onclick={(e) => handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`)}
+       role="button"
+       tabindex="0"
+       onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`); }}
+    >
+        <md-icon slot="icon"><svg viewBox="0 0 24 24"><path d={ICONS.github} /></svg></md-icon>
+        {store.L.info.projectLink}
+    </md-filled-tonal-button>
   </div>
 
-  <div>
+  <div class="contributors-section">
+   
     <div class="section-title">{store.L.info.contributors}</div>
-    <div class="contributors-list">
+    <div class="list-wrapper">
         {#if loading}
             {#each Array(3) as _}
-                <div class="contributor-bar">
-                    <Skeleton width="48px" height="48px" borderRadius="50%" />
-                    <div class="c-info">
-                        <div class="skeleton-spacer">
-                             <Skeleton width="120px" height="16px" />
-                        </div>
-                        <Skeleton width="200px" height="12px" />
+                <div class="skeleton-item">
+                    <Skeleton width="40px" height="40px" borderRadius="50%" />
+                    <div class="skeleton-text">
+       
+                        <Skeleton width="120px" height="16px" />
+                        <Skeleton width="180px" height="12px" />
                     </div>
                 </div>
             {/each}
+     
         {:else if error}
             <div class="error-message">
                 {store.L.info.loadFail}
             </div>
         {:else}
-            {#each contributors as user}
-                <a href={user.html_url} 
-                   class="contributor-bar"
-                   onclick={(e) => handleLink(e, user.html_url)}>
-                    <img src={user.avatar_url} alt={user.login} class="c-avatar" />
-                    <div class="c-info">
-                        <span class="c-name">{user.name || user.login}</span>
-                        <span class="c-bio">
-                            {user.bio || store.L.info.noBio}
-                        </span>
-                    </div>
-                    <svg viewBox="0 0 24 24" class="c-link-icon"><path d={ICONS.share} /></svg>
-                </a>
-            {/each}
+            <md-list class="contributors-list">
+                {#each contributors as user}
+              
+                     <md-list-item 
+                        type="link" 
+                        href={user.html_url}
+                        target="_blank"
+                        onclick={(e) => handleLink(e, user.html_url)}
+                        role="link"
+                        tabindex="0"
+                        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleLink(e, user.html_url); }}
+                    >
+                        <img slot="start" src={user.avatar_url} alt={user.login} class="c-avatar" loading="lazy" />
+                        <div slot="headline">{user.name || user.login}</div>
+                        <div slot="supporting-text">{user.bio || store.L.info.noBio}</div>
+                    </md-list-item>
+                {/each}
+            </md-list>
         {/if}
     </div>
   </div>

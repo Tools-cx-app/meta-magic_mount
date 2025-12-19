@@ -26,7 +26,7 @@
     }
   });
 </script>
-<nav class="bottom-nav" bind:this={navContainer}>
+<nav class="bottom-nav" class:fix-padding={store.fixBottomNav} bind:this={navContainer}>
   {#each TABS as tab}
     <button 
       class="nav-tab {activeTab === tab.id ? 'active' : ''}" 

@@ -21,6 +21,7 @@
   :global(.bottom-actions-root > *) {
     pointer-events: auto;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 9999px;
   }
   :global(.bottom-actions-root > .spacer) {
     flex: 1;
