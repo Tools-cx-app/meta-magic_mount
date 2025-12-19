@@ -11,13 +11,11 @@ CHAT_ID = int(os.environ.get("CHAT_ID"))
 COMMIT_URL = os.environ.get("COMMIT_URL")
 COMMIT_MESSAGE = os.environ.get("COMMIT_MESSAGE")
 BOT_CI_SESSION = os.environ.get("BOT_CI_SESSION")
-ANOTHER = os.environ.get("ANOTHER")
 MSG_TEMPLATE = """
 New push to Github
 ```
 {commit_message}
 ```
-by {another}
 See commit detail [here]({commit_url})
 """.strip()
 
@@ -26,7 +24,6 @@ def get_caption():
     msg = MSG_TEMPLATE.format(
         commit_message=COMMIT_MESSAGE,
         commit_url=COMMIT_URL,
-        another=ANOTHER,
     )
     if len(msg) > 1024:
         return COMMIT_URL
