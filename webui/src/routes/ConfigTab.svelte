@@ -4,6 +4,12 @@
   import ChipInput from '../components/ChipInput.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './ConfigTab.css';
+  import '@material/web/textfield/outlined-text-field.js';
+  import '@material/web/button/filled-button.js';
+  import '@material/web/iconbutton/filled-tonal-icon-button.js';
+  import '@material/web/iconbutton/icon-button.js';
+  import '@material/web/icon/icon.js';
+  import '@material/web/ripple/ripple.js';
   
   let initialConfigStr = $state('');
   
@@ -14,7 +20,7 @@
     if (!initialConfigStr) return false;
     return JSON.stringify(store.config) !== initialConfigStr;
   });
-  
+
   $effect(() => {
     if (!store.loading.config && store.config) {
       if (!initialConfigStr || initialConfigStr === JSON.stringify(store.config)) {
@@ -22,7 +28,7 @@
       }
     }
   });
-  
+
   function save() {
     if (invalidModuleDir) {
       store.showToast(store.L.config.invalidPath, "error");
@@ -44,42 +50,72 @@
       store.config[key] = !store.config[key];
     }
   }
+
+  function handleInput(key, value) {
+    store.config[key] = value;
+  }
 </script>
 
 <div class="config-container">
   <section class="config-group">
-    <div class="input-card">
-      <div class="text-field-row" class:error={invalidModuleDir}>
-        <div class="icon-slot">
-          <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.modules} fill="currentColor"/></svg>
+    <div class="config-card">
+      <div class="card-header">
+        <div class="card-icon">
+          <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.modules} /></svg></md-icon>
         </div>
-        <div class="field-content">
-          <label for="c-moduledir">{store.L.config.moduleDir}</label>
-          <input type="text" id="c-moduledir" bind:value={store.config.moduledir} placeholder="/data/adb/modules" />
+        <div class="card-text">
+          <span class="card-title">{store.L.config.moduleDir}</span>
+          <span class="card-desc">Set the directory where modules are stored</span>
         </div>
       </div>
-      <div class="divider"></div>
-      <div class="text-field-row">
-        <div class="icon-slot">
-          <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.ksu} fill="currentColor"/></svg>
+      
+      <div class="input-stack">
+        <md-outlined-text-field 
+          label={store.L.config.moduleDir} 
+          value={store.config.moduledir}
+          oninput={(e) => handleInput('moduledir', e.target.value)}
+          error={invalidModuleDir}
+          supporting-text={invalidModuleDir ? (store.L.config.invalidPath || "Invalid Path") : ""}
+          class="full-width-field"
+        >
+          <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.modules} /></svg></md-icon>
+        </md-outlined-text-field>
+      </div>
+    </div>
+
+    <div class="config-card">
+      <div class="card-header">
+        <div class="card-icon">
+          <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.ksu} /></svg></md-icon>
         </div>
-        <div class="field-content">
-          <label for="c-mountsource">{store.L.config.mountSource}</label>
-          <input type="text" id="c-mountsource" bind:value={store.config.mountsource} />
+        <div class="card-text">
+          <span class="card-title">{store.L.config.mountSource}</span>
+          <span class="card-desc">Global mount source namespace (e.g. KSU)</span>
         </div>
+      </div>
+      
+      <div class="input-stack">
+        <md-outlined-text-field 
+          label={store.L.config.mountSource} 
+          value={store.config.mountsource}
+          oninput={(e) => handleInput('mountsource', e.target.value)}
+          class="full-width-field"
+        >
+          <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.ksu} /></svg></md-icon>
+        </md-outlined-text-field>
       </div>
     </div>
   </section>
   
   <section class="config-group">
-    <div class="partition-card">
-      <div class="partition-header">
-        <div class="p-icon">
-           <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.storage} fill="currentColor"/></svg>
+    <div class="config-card">
+      <div class="card-header">
+        <div class="card-icon">
+           <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.storage} /></svg></md-icon>
         </div>
-        <div class="p-text">
-          <span class="p-title">{store.L.config.partitions}</span>
-          <span class="p-desc">Add partitions to mount</span>
+        <div class="card-text">
+          <span class="card-title">{store.L.config.partitions}</span>
+          <span class="card-desc">Add partitions to mount</span>
         </div>
       </div>
       <div class="p-input">
@@ -95,27 +131,30 @@
         class:active={store.config.verbose} 
         onclick={() => toggle('verbose')}
       >
+        <md-ripple></md-ripple>
         <div class="tile-top">
           <div class="tile-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.description} fill="currentColor"/></svg>
+            <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.description} /></svg></md-icon>
           </div>
         </div>
         <div class="tile-bottom">
           <span class="tile-label">{store.L.config.verboseLabel}</span>
         </div>
       </button>
+
       <button 
         class="option-tile clickable tertiary" 
         class:active={store.config.disable_umount} 
         onclick={() => toggle('disable_umount')}
       >
+        <md-ripple></md-ripple>
         <div class="tile-top">
           <div class="tile-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24"><path d={ICONS.anchor} fill="currentColor"/></svg>
+            <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.anchor} /></svg></md-icon>
           </div>
         </div>
         <div class="tile-bottom">
-          <span class="tile-label">{store.L.config.umountLabel}</span>
+          <span class="tile-label">{store.L.config.umountLabel || 'Disable Umount'}</span>
         </div>
       </button>
     </div>
@@ -123,17 +162,21 @@
 </div>
 
 <BottomActions>
-  <button 
-    class="btn-tonal" 
+  <md-filled-tonal-icon-button 
     onclick={reload}
     disabled={store.loading.config}
     title={store.L.config.reload}
   >
-    <svg width="20" height="20" viewBox="0 0 24 24"><path d={ICONS.refresh} fill="currentColor"/></svg>
-  </button>
+    <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.refresh} /></svg></md-icon>
+  </md-filled-tonal-icon-button>
+  
   <div class="spacer"></div>
-  <button class="btn-filled" onclick={save} disabled={store.saving.config || !isDirty}>
-    <svg width="18" height="18" viewBox="0 0 24 24"><path d={ICONS.save} fill="currentColor"/></svg>
+
+  <md-filled-button 
+    onclick={save} 
+    disabled={store.saving.config || !isDirty}
+  >
+    <md-icon slot="icon"><svg viewBox="0 0 24 24"><path d={ICONS.save} /></svg></md-icon>
     {store.saving.config ? store.L.common.saving : store.L.config.save}
-  </button>
+  </md-filled-button>
 </BottomActions>

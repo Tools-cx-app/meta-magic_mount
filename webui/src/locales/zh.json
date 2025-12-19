@@ -30,7 +30,7 @@
     "verboseLabel": "详细日志",
     "verboseOff": "关闭",
     "verboseOn": "开启",
-    "umountLabel": "卸载模块 (Umount)",
+    "umountLabel": "禁用Umount",
     "umountOff": "默认",
     "umountOn": "强制卸载",
     "moduleDir": "模块路径",
