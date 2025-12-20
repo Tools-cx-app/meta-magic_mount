@@ -7,10 +7,9 @@ use std::{
 };
 
 use anyhow::Result;
-use extattr::lgetxattr;
 use rustix::path::Arg;
 
-use crate::defs::REPLACE_DIR_XATTR;
+use crate::utils::lgetfilecon;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeFileType {
@@ -120,8 +119,8 @@ impl Node {
             };
             if let Some(file_type) = file_type {
                 let replace = if file_type == NodeFileType::Directory
-                    && let Ok(v) = lgetxattr(&path, REPLACE_DIR_XATTR)
-                    && String::from_utf8_lossy(&v) == "y"
+                    && let Ok(v) = lgetfilecon(&path)
+                    && v == "y"
                 {
                     true
                 } else {
