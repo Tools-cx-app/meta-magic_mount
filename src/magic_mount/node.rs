@@ -6,10 +6,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use rustix::path::Arg;
+use xattr::get as xattr_get;
 
-use crate::utils::lgetfilecon;
+use crate::defs::REPLACE_DIR_XATTR;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeFileType {
@@ -119,8 +120,11 @@ impl Node {
             };
             if let Some(file_type) = file_type {
                 let replace = if file_type == NodeFileType::Directory
-                    && let Ok(v) = lgetfilecon(&path)
-                    && v == "y"
+                    && let Ok(v) = xattr_get(&path, REPLACE_DIR_XATTR).with_context(|| {
+                        format!("Failed to get SELinux context for {}", path.display())
+                    })
+                    && let Some(s) = v
+                    && String::from_utf8_lossy(&s) == "y"
                 {
                     true
                 } else {
