@@ -41,7 +41,7 @@ where
         work_dir_path.display()
     );
 
-    let _ = create_dir_all(work_dir_path);
+    create_dir_all(work_dir_path)?;
 
     let (metadata, path) = metadata_path(path, node)?;
 

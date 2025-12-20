@@ -8,7 +8,8 @@ use std::{
 
 use anyhow::{Context, Result, bail};
 use rustix::mount::{
-    MountFlags, MountPropagationFlags, mount, mount_bind, mount_change, mount_move, mount_remount,
+    MountFlags, MountPropagationFlags, UnmountFlags, mount, mount_bind, mount_change, mount_move,
+    mount_remount, unmount,
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -87,7 +88,7 @@ impl MagicMount {
 
     fn regular_file(&self) -> Result<()> {
         let target = if self.has_tmpfs {
-            let _ = std::fs::create_dir_all(&self.work_dir_path);
+            fs::File::create(&self.work_dir_path)?;
             &self.work_dir_path
         } else {
             &self.path
@@ -98,6 +99,12 @@ impl MagicMount {
         }
 
         let module_path = &self.node.module_path.clone().unwrap();
+
+        log::debug!(
+            "mount module file {} -> {}",
+            module_path.display(),
+            self.work_dir_path.display()
+        );
 
         mount_bind(module_path, target).with_context(|| {
             #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -111,15 +118,22 @@ impl MagicMount {
                 self.work_dir_path.display(),
             )
         })?;
+
+        // we should use MS_REMOUNT | MS_BIND | MS_xxx to change mount flags
+        if let Err(e) = mount_remount(target, MountFlags::RDONLY | MountFlags::BIND, "") {
+            log::warn!("make file {} ro: {e:#?}", target.display());
+        }
         Ok(())
     }
 
     fn directory(&mut self) -> Result<()> {
-        let tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
+        let mut tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
 
         if !self.has_tmpfs && !tmpfs {
-            let (_, tmpfs) = utils::check_tmpfs(&mut self.node, &self.path);
-            self.has_tmpfs = tmpfs;
+            let (node, ret_tmpfs) = utils::check_tmpfs(&mut self.node, &self.path);
+            self.node = node;
+            self.has_tmpfs = ret_tmpfs;
+            tmpfs = ret_tmpfs;
         }
         let has_tmpfs = tmpfs || self.has_tmpfs;
 
@@ -293,7 +307,7 @@ where
         mount(mount_source, &tmp_dir, "tmpfs", MountFlags::empty(), None).context("mount tmp")?;
         mount_change(&tmp_dir, MountPropagationFlags::PRIVATE).context("make tmp private")?;
 
-        MagicMount::new(
+        let ret = MagicMount::new(
             &root,
             Path::new("/"),
             tmp_dir.as_path(),
@@ -301,9 +315,16 @@ where
             #[cfg(any(target_os = "linux", target_os = "android"))]
             umount,
         )
-        .do_mount()?;
+        .do_mount();
+
+        if let Err(e) = unmount(&tmp_dir, UnmountFlags::DETACH) {
+            log::error!("failed to unmount tmp {e}");
+        }
+        fs::remove_dir(tmp_dir).ok();
+
+        ret
     } else {
         log::info!("no modules to mount, skipping!");
+        Ok(())
     }
-    Ok(())
 }
