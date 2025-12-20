@@ -1,7 +1,14 @@
-<script>
-  let { values = $bindable([]), placeholder = "Add item...", onChange = () => {} } = $props();
+<script lang="ts">
+  interface Props {
+    values: string[];
+    placeholder?: string;
+    onChange?: () => void;
+  }
+
+  let { values = $bindable([]), placeholder = "Add item...", onChange = () => {} }: Props = $props();
   let inputValue = $state("");
-  function handleKeydown(e) {
+
+  function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
       e.preventDefault();
       addChip();
@@ -19,7 +26,7 @@
       inputValue = "";
     }
   }
-  function removeChip(index) {
+  function removeChip(index: number) {
     values = values.filter((_, i) => i !== index);
     onChange();
   }

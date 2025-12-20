@@ -1,26 +1,29 @@
-import { API } from './api';
+import { API, type MagicConfig, type MagicModule, type DeviceStatus, type StorageUsage, type SystemInfo } from './api';
 import { DEFAULT_CONFIG, DEFAULT_SEED } from './constants';
 import { Monet } from './theme';
 
 const localeModules = import.meta.glob('../locales/*.json', { eager: true });
+const modulesAny: Record<string, any> = localeModules;
 
-/** @type {Record<string, any>} */
-const modulesAny = localeModules;
+let darkModeQuery: MediaQueryList;
 
-let darkModeQuery;
+export interface LogEntry {
+    text: string;
+    type: 'info' | 'error' | 'warn' | 'debug';
+}
 
 const createStore = () => {
   let theme = $state('auto');
   let isSystemDark = $state(false);
   let lang = $state('en');
   let seed = $state(DEFAULT_SEED);
-  let loadedLocale = $state(null);
+  let loadedLocale = $state<any>(null);
   let toast = $state({ id: 'init', text: '', type: 'info', visible: false });
 
   let fixBottomNav = $state(false);
 
   const availableLanguages = Object.entries(modulesAny).map(([path, moduleData]) => {
-    const mod = /** @type {any} */ (moduleData);
+    const mod = moduleData as any;
     const match = path.match(/\/([^/]+)\.json$/);
     const code = match ? match[1] : 'en';
     const name = mod.default?.lang?.display || code.toUpperCase();
@@ -31,16 +34,16 @@ const createStore = () => {
     return a.name.localeCompare(b.name);
   });
 
-  let config = $state(DEFAULT_CONFIG);
-  let modules = $state([]);
-  let logs = $state([]);
+  let config = $state<MagicConfig>(DEFAULT_CONFIG);
+  let modules = $state<MagicModule[]>([]);
+  let logs = $state<LogEntry[]>([]);
   
-  let device = $state({ model: '-', android: '-', kernel: '-', selinux: '-' });
+  let device = $state<DeviceStatus>({ model: '-', android: '-', kernel: '-', selinux: '-' });
   let version = $state('...');
-  let storage = $state({ used: '-', size: '-', percent: '0%', type: null, hymofs_available: false });
-  let systemInfo = $state({ kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] });
-  let activePartitions = $state([]);
-  let diagnostics = $state([]);
+  let storage = $state<StorageUsage>({ used: '-', size: '-', percent: '0%', type: null, hymofs_available: false });
+  let systemInfo = $state<SystemInfo>({ kernel: '-', selinux: '-', mountBase: '-', activeMounts: [] });
+  let activePartitions = $state<string[]>([]);
+  let diagnostics = $state<any[]>([]);
 
   let loadingConfig = $state(false);
   let loadingModules = $state(false);
@@ -62,7 +65,7 @@ const createStore = () => {
     return stats;
   });
 
-  function showToast(text, type = 'info') {
+  function showToast(text: string, type = 'info') {
     const id = Date.now().toString();
     toast = { id, text, type, visible: true };
     setTimeout(() => {
@@ -72,7 +75,7 @@ const createStore = () => {
     }, 3000);
   }
 
-  function setTheme(t) {
+  function setTheme(t: string) {
     theme = t;
     localStorage.setItem('mm-theme', t);
     applyTheme();
@@ -89,7 +92,7 @@ const createStore = () => {
     Monet.apply(seed, isDark);
   }
 
-  async function loadLocale(code) {
+  async function loadLocale(code: string) {
     const path = `../locales/${code}.json`;
     const entry = Object.entries(modulesAny).find(([k]) => k.endsWith(`/${code}.json`));
     if (entry) {
@@ -100,7 +103,7 @@ const createStore = () => {
     }
   }
 
-  function setLang(code) {
+  function setLang(code: string) {
     lang = code;
     localStorage.setItem('mm-lang', code);
     loadLocale(code);
@@ -196,8 +199,8 @@ const createStore = () => {
     if (!silent) loadingLogs = true;
     try {
       const rawLogs = await API.readLogs();
-      logs = rawLogs.split('\n').map(line => {
-        let type = 'info';
+      logs = rawLogs.split('\n').map((line: string) => {
+        let type: LogEntry['type'] = 'info';
         if (line.includes('[E]') || line.includes('ERROR')) type = 'error';
         else if (line.includes('[W]') || line.includes('WARN')) type = 'warn';
         else if (line.includes('[D]') || line.includes('DEBUG')) type = 'debug';

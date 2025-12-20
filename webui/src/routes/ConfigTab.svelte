@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
   import ChipInput from '../components/ChipInput.svelte';
   import BottomActions from '../components/BottomActions.svelte';
+  import type { MagicConfig } from '../lib/api';
   import './ConfigTab.css';
   import '@material/web/textfield/outlined-text-field.js';
   import '@material/web/button/filled-button.js';
@@ -12,12 +13,14 @@
   import '@material/web/ripple/ripple.js';
   let initialConfigStr = $state('');
   
-  const isValidPath = (p) => !p || (p.startsWith('/') && p.length > 1);
+  const isValidPath = (p: string) => !p || (p.startsWith('/') && p.length > 1);
   let invalidModuleDir = $derived(!isValidPath(store.config.moduledir));
+
   let isDirty = $derived.by(() => {
     if (!initialConfigStr) return false;
     return JSON.stringify(store.config) !== initialConfigStr;
   });
+
   $effect(() => {
     if (!store.loading.config && store.config) {
       if (!initialConfigStr || initialConfigStr === JSON.stringify(store.config)) {
@@ -25,9 +28,10 @@
       }
     }
   });
+
   function save() {
     if (invalidModuleDir) {
-      store.showToast(store.L.config.invalidPath, "error");
+      store.showToast(store.L.config.invalidPath || "Invalid Path", "error");
       return;
     }
     store.saveConfig().then(() => {
@@ -41,13 +45,13 @@
     });
   }
   
-  function toggle(key) {
+  function toggle(key: keyof MagicConfig) {
     if (typeof store.config[key] === 'boolean') {
       store.config[key] = !store.config[key];
     }
   }
 
-  function handleInput(key, value) {
+  function handleInput(key: keyof MagicConfig, value: string) {
     store.config[key] = value;
   }
 </script>
@@ -63,17 +67,15 @@
           <span class="card-title">{store.L.config.moduleDir}</span>
           <span class="card-desc">{store.L.config?.moduleDirDesc || "Set the directory where modules are stored"}</span>
         </div>
-      
       </div>
       
       <div class="input-stack">
         <md-outlined-text-field 
           label={store.L.config.moduleDir} 
           value={store.config.moduledir}
-          oninput={(e) => handleInput('moduledir', e.target.value)}
+          oninput={(e: Event) => handleInput('moduledir', (e.target as HTMLInputElement).value)}
           error={invalidModuleDir}
-          supporting-text={invalidModuleDir ?
-            (store.L.config.invalidPath || "Invalid Path") : ""}
+          supporting-text={invalidModuleDir ? (store.L.config.invalidPath || "Invalid Path") : ""}
           class="full-width-field"
         >
           <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.modules} /></svg></md-icon>
@@ -96,7 +98,7 @@
         <md-outlined-text-field 
           label={store.L.config.mountSource} 
           value={store.config.mountsource}
-          oninput={(e) => handleInput('mountsource', e.target.value)}
+          oninput={(e: Event) => handleInput('mountsource', (e.target as HTMLInputElement).value)}
           class="full-width-field"
         >
           <md-icon slot="leading-icon"><svg viewBox="0 0 24 24"><path d={ICONS.ksu} /></svg></md-icon>
@@ -109,7 +111,6 @@
     <div class="config-card">
       <div class="card-header">
         <div class="card-icon">
-          
           <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.storage} /></svg></md-icon>
         </div>
         <div class="card-text">
@@ -144,7 +145,6 @@
       <button 
         class="option-tile clickable tertiary" 
         class:active={store.config.disable_umount} 
-        
         onclick={() => toggle('disable_umount')}
       >
         <md-ripple></md-ripple>
@@ -185,7 +185,7 @@
     title={store.L.config.reload}
     role="button"
     tabindex="0"
-    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') reload(); }}
+    onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') reload(); }}
   >
     <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.refresh} /></svg></md-icon>
   </md-filled-tonal-icon-button>
@@ -197,7 +197,7 @@
     disabled={store.saving.config || !isDirty}
     role="button"
     tabindex="0"
-    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') save(); }}
+    onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') save(); }}
   >
     <md-icon slot="icon"><svg viewBox="0 0 24 24"><path d={ICONS.save} /></svg></md-icon>
     {store.saving.config ? store.L.common.saving : store.L.config.save}

@@ -1,11 +1,11 @@
-<script>
+<script lang="ts">
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
   import './TopBar.css';
 
   let showLangMenu = $state(false);
-  let langButtonRef = $state();
-  let menuRef = $state();
+  let langButtonRef = $state<HTMLElement>();
+  let menuRef = $state<HTMLElement>();
 
   function toggleTheme() {
     let nextTheme;
@@ -33,15 +33,16 @@
     return ICONS.dark_mode;
   }
 
-  function setLang(code) {
+  function setLang(code: string) {
     store.setLang(code);
     showLangMenu = false;
   }
   
-  function handleOutsideClick(e) {
+  function handleOutsideClick(e: MouseEvent) {
+    const target = e.target as Node;
     if (showLangMenu && 
-        menuRef && !menuRef.contains(e.target) && 
-        langButtonRef && !langButtonRef.contains(e.target)) {
+        menuRef && !menuRef.contains(target) && 
+        langButtonRef && !langButtonRef.contains(target)) {
       showLangMenu = false;
     }
   }

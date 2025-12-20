@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
   import { onMount, tick, onDestroy } from 'svelte';
@@ -11,10 +11,10 @@
   import '@material/web/icon/icon.js';
 
   let searchLogQuery = $state('');
-  let filterLevel = $state('all'); 
-  let logContainer = $state();
+  let filterLevel = $state<'all' | 'info' | 'warn' | 'error'>('all'); 
+  let logContainer = $state<HTMLElement>();
   let autoRefresh = $state(false);
-  let refreshInterval;
+  let refreshInterval: number | undefined; 
   let userHasScrolledUp = $state(false);
 
   let filteredLogs = $derived(store.logs.filter(line => {
@@ -27,7 +27,6 @@
       matchesLevel = type === filterLevel;
     }
     return matchesSearch && matchesLevel;
-  
   }));
 
   async function scrollToBottom() {
@@ -38,8 +37,8 @@
     }
   }
 
-  function handleScroll(e) {
-    const target = e.target;
+  function handleScroll(e: Event) {
+    const target = e.target as HTMLElement;
     const { scrollTop, scrollHeight, clientHeight } = target;
     const distanceToBottom = scrollHeight - scrollTop - clientHeight;
     userHasScrolledUp = distanceToBottom > 50;
@@ -59,16 +58,17 @@
     const text = filteredLogs.map(l => (typeof l === 'string' ? l : l.text)).join('\n');
     try {
       await navigator.clipboard.writeText(text);
-      store.showToast(store.L.logs.copySuccess, 'success');
+      store.showToast(store.L.logs.copySuccess || "Copied", 'success');
     } catch (e) {
-      store.showToast(store.L.logs.copyFail, 'error');
+      store.showToast(store.L.logs.copyFail || "Failed to copy", 'error');
     }
   }
 
   $effect(() => {
     if (autoRefresh) {
       refreshLogs(true); 
-      refreshInterval = setInterval(() => {
+      // window.setInterval returns a number in browser env
+      refreshInterval = window.setInterval(() => {
         refreshLogs(true); 
       }, 3000);
     } else {
@@ -76,14 +76,17 @@
     }
     return () => { if (refreshInterval) clearInterval(refreshInterval); };
   });
+
   onMount(() => {
     refreshLogs(); 
   });
+
   onDestroy(() => {
     if (refreshInterval) clearInterval(refreshInterval);
   });
-  function toggleAutoRefresh(e) {
-      autoRefresh = e.target.checked;
+
+  function toggleAutoRefresh(e: Event) {
+      autoRefresh = (e.target as HTMLInputElement).checked;
   }
 </script>
 
@@ -99,7 +102,6 @@
         />
     </div>
     
- 
     <div class="controls-right">
         <div class="log-auto-group">
             <md-checkbox 
@@ -107,7 +109,6 @@
                 checked={autoRefresh} 
                 onchange={toggleAutoRefresh}
                 touch-target="wrapper"
-        
             ></md-checkbox>
             <label for="auto-refresh" class="log-auto-label">Auto</label>
         </div>
@@ -129,12 +130,10 @@
         {#each Array(10) as _, i}
             <Skeleton width="{60 + (i % 3) * 20}%" height="14px" />
         {/each}
-       
         </div>
     {:else if filteredLogs.length === 0}
         <div class="log-empty-state">
-        {store.logs.length === 0 ?
-            store.L.logs.empty : "No matching logs"}
+        {store.logs.length === 0 ? store.L.logs.empty : "No matching logs"}
         </div>
     {:else}
         {#each filteredLogs as line}
@@ -143,7 +142,6 @@
                 <span class="log-info">{line}</span>
             {:else}
                 <span class="log-{line.type}">{line.text}</span>
-  
             {/if}
         </div>
         {/each}
@@ -172,7 +170,7 @@
     title={store.L.logs.copy}
     role="button"
     tabindex="0"
-    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') copyLogs(); }}
+    onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') copyLogs(); }}
   >
     <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.copy} /></svg></md-icon>
   </md-filled-tonal-icon-button>
@@ -185,7 +183,7 @@
     title={store.L.logs.refresh}
     role="button"
     tabindex="0"
-    onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') refreshLogs(false); }}
+    onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') refreshLogs(false); }}
   >
     <md-icon><svg viewBox="0 0 24 24"><path d={ICONS.refresh} /></svg></md-icon>
   </md-filled-tonal-icon-button>

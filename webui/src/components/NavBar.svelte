@@ -1,10 +1,18 @@
-<script>
+<script lang="ts">
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
   import './NavBar.css';
-  let { activeTab, onTabChange } = $props();
-  let navContainer = $state();
-  let tabRefs = $state({});
+
+  interface Props {
+    activeTab: string;
+    onTabChange: (id: string) => void;
+  }
+
+  let { activeTab, onTabChange }: Props = $props();
+  
+  let navContainer = $state<HTMLElement>();
+  let tabRefs = $state<Record<string, HTMLElement>>({});
+
   const TABS = [
     { id: 'status', icon: ICONS.home },
     { id: 'config', icon: ICONS.settings },
@@ -12,6 +20,7 @@
     { id: 'logs', icon: ICONS.description },
     { id: 'info', icon: ICONS.info }
   ];
+
   $effect(() => {
     if (activeTab && tabRefs[activeTab] && navContainer) {
       const tab = tabRefs[activeTab];
@@ -26,6 +35,7 @@
     }
   });
 </script>
+
 <nav class="bottom-nav" class:fix-padding={store.fixBottomNav} bind:this={navContainer}>
   {#each TABS as tab}
     <button 
@@ -37,7 +47,7 @@
       <div class="icon-container">
         <svg viewBox="0 0 24 24"><path d={tab.icon}/></svg>
       </div>
-      <span class="label">{store.L.tabs[tab.id]}</span>
+      <span class="label">{store.L.tabs?.[tab.id] ?? tab.id}</span>
     </button>
   {/each}
 </nav>

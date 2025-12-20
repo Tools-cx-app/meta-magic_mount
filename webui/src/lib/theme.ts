@@ -4,8 +4,9 @@ import {
   SchemeTonalSpot, 
   Hct 
 } from '@material/material-color-utilities';
+
 export const Monet = {
-  apply: (seedHex, isDark) => {
+  apply: (seedHex: string, isDark: boolean) => {
     if (!seedHex) return;
     let seedArgb;
     try {
@@ -16,7 +17,7 @@ export const Monet = {
     }
     const sourceColor = Hct.fromInt(seedArgb);
     const scheme = new SchemeTonalSpot(sourceColor, isDark, 0.0);
-    const tokens = {
+    const tokens: Record<string, number> = {
       '--md-sys-color-primary': scheme.primary,
       '--md-sys-color-on-primary': scheme.onPrimary,
       '--md-sys-color-primary-container': scheme.primaryContainer,
@@ -50,6 +51,7 @@ export const Monet = {
       '--md-sys-color-inverse-primary': scheme.inversePrimary,
       '--md-sys-color-shadow': scheme.shadow,
     };
+
     const root = document.documentElement.style;
     for (const [key, value] of Object.entries(tokens)) {
       root.setProperty(key, hexFromArgb(value));
