@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
@@ -27,6 +27,7 @@
   }
 
   let showRebootConfirm = $state(false);
+
   function handleReboot() {
     showRebootConfirm = false;
     store.rebootDevice();

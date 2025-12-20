@@ -1,7 +1,16 @@
-<script>
+<script lang="ts">
   import './Skeleton.css';
-  let { width = '100%', height = '20px', borderRadius = '12px', style = '' } = $props();
+
+  interface Props {
+    width?: string;
+    height?: string;
+    borderRadius?: string;
+    style?: string;
+  }
+
+  let { width = '100%', height = '20px', borderRadius = '12px', style = '' }: Props = $props();
 </script>
+
 <div 
   class="skeleton" 
   style:width={width} 

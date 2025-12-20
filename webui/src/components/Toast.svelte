@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { store } from '../lib/store.svelte';
   import { flip } from 'svelte/animate';
   import { fly } from 'svelte/transition';

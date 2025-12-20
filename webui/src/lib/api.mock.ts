@@ -1,10 +1,14 @@
 import { DEFAULT_CONFIG } from './constants';
+import type { MagicConfig, MagicModule, StorageUsage, SystemInfo, DeviceStatus } from './api';
+
 const MOCK_DELAY = 600;
-function delay(ms) {
+
+function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 export const MockAPI = {
-  loadConfig: async () => {
+  loadConfig: async (): Promise<MagicConfig> => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] loadConfig");
     return {
@@ -16,11 +20,13 @@ export const MockAPI = {
       partitions: ['product', 'system_ext', 'vendor']
     };
   },
-  saveConfig: async (config) => {
+
+  saveConfig: async (config: MagicConfig) => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] saveConfig:", config);
   },
-  scanModules: async (moduleDir) => {
+
+  scanModules: async (moduleDir: string): Promise<MagicModule[]> => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] scanModules");
     return [
@@ -28,35 +34,36 @@ export const MockAPI = {
         id: "youtube-revanced",
         name: "YouTube ReVanced",
         version: "18.20.39",
+        author: "ReVanced Team",
         description: "YouTube ReVanced Module",
         is_mounted: true,
-        disabledByFlag: false,
-        skipMount: false,
-        mode: 'magic'
+        mode: 'magic',
+        rules: { default_mode: 'magic', paths: {} }
       },
       {
         id: "pixelfy-gphotos",
         name: "Pixelfy GPhotos",
         version: "2.1",
+        author: "PixelProps",
         description: "Unlimited Google Photos backup for Pixel devices.",
         is_mounted: true,
-        disabledByFlag: false,
-        skipMount: false,
-        mode: 'magic'
+        mode: 'magic',
+        rules: { default_mode: 'magic', paths: {} }
       },
       {
         id: "sound-enhancer",
         name: "Sound Enhancer",
         version: "1.0",
+        author: "AudioMod",
         description: "Improves system audio quality. Currently disabled.",
         is_mounted: false,
-        disabledByFlag: true,
-        skipMount: false,
-        mode: 'magic'
+        mode: 'magic',
+        rules: { default_mode: 'magic', paths: {} }
       }
     ];
   },
-  readLogs: async (logPath, lines) => {
+
+  readLogs: async (logPath?: string, lines?: number): Promise<string> => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] readLogs");
     return `[I] Magic Mount Daemon v1.0.0 started
@@ -72,7 +79,8 @@ export const MockAPI = {
 [E] Failed to mount /system/my_custom_partition: No such file or directory
 [I] Daemon loop active`;
   },
-  getStorageUsage: async () => {
+
+  getStorageUsage: async (): Promise<StorageUsage> => {
     await delay(MOCK_DELAY);
     return {
       type: 'ext4',
@@ -82,7 +90,8 @@ export const MockAPI = {
       hymofs_available: false 
     };
   },
-  getSystemInfo: async () => {
+
+  getSystemInfo: async (): Promise<SystemInfo> => {
     await delay(MOCK_DELAY);
     return {
       kernel: '5.10.101-android12-9-00001-g532145',
@@ -91,7 +100,8 @@ export const MockAPI = {
       activeMounts: ['youtube-revanced', 'pixelfy-gphotos']
     };
   },
-  getDeviceStatus: async () => {
+
+  getDeviceStatus: async (): Promise<DeviceStatus> => {
     await delay(MOCK_DELAY);
     return {
       model: 'Pixel 8 Pro (Mock)',
@@ -100,19 +110,23 @@ export const MockAPI = {
       selinux: 'Enforcing'
     };
   },
-  getVersion: async () => {
+
+  getVersion: async (): Promise<string> => {
     await delay(MOCK_DELAY);
     return "1.2.0-mock";
   },
-  rebootDevice: async () => {
+
+  reboot: async (): Promise<void> => {
     console.log("[MockAPI] Reboot requested");
     alert("Reboot requested (Mock)");
   },
-  openLink: async (url) => {
+
+  openLink: async (url: string) => {
     console.log("[MockAPI] Open link:", url);
     window.open(url, '_blank');
   },
-  fetchSystemColor: async () => {
+
+  fetchSystemColor: async (): Promise<string | null> => {
     await delay(500);
     return '#50a48f'; 
   }

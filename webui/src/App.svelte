@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { store } from './lib/store.svelte';
   import TopBar from './components/TopBar.svelte';
@@ -11,6 +11,7 @@
   import InfoTab from './routes/InfoTab.svelte';
   import './app.css';
   import './layout.css';
+  
   let activeTab = $state('status');
   let dragOffset = $state(0);
   let isDragging = $state(false);
@@ -19,16 +20,19 @@
   let touchStartY = 0;
   let isReady = $state(false);
   const TABS = ['status', 'config', 'modules', 'logs', 'info'];
-  function switchTab(id) {
+
+  function switchTab(id: string) {
     activeTab = id;
   }
-  function handleTouchStart(e) {
+
+  function handleTouchStart(e: TouchEvent) {
     touchStartX = e.changedTouches[0].screenX;
     touchStartY = e.changedTouches[0].screenY;
     isDragging = true;
     dragOffset = 0;
   }
-  function handleTouchMove(e) {
+
+  function handleTouchMove(e: TouchEvent) {
     if (!isDragging) return;
     const currentX = e.changedTouches[0].screenX;
     const currentY = e.changedTouches[0].screenY;
@@ -44,6 +48,7 @@
     }
     dragOffset = diffX;
   }
+
   function handleTouchEnd() {
     if (!isDragging) return;
     isDragging = false;
@@ -60,6 +65,7 @@
     }
     dragOffset = 0;
   }
+
   onMount(async () => {
     try {
       await store.init();
@@ -67,8 +73,10 @@
       isReady = true;
     }
   });
+
   let baseTranslateX = $derived(TABS.indexOf(activeTab) * -20);
 </script>
+
 <div class="app-root">
   {#if !isReady}
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; gap: 16px;">
@@ -97,6 +105,7 @@
   {/if}
   <Toast />
 </div>
+
 <style>
   .spinner {
     width: 40px;

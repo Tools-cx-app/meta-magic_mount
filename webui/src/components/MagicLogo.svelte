@@ -1,5 +1,4 @@
-<script>
-  // MagicLogo - A mystical and tech-combined representation for Magic Mount
+<script lang="ts">
 </script>
 
 <div class="logo-wrapper">

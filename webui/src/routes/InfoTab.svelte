@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { store } from '../lib/store.svelte';
   import { API } from '../lib/api';
@@ -17,7 +17,18 @@
   const CACHE_KEY = 'mm_contributors_cache';
   const CACHE_DURATION = 1000 * 60 * 60;
 
-  let contributors = $state([]);
+  interface Contributor {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+    type: string;
+    name?: string;
+    bio?: string;
+    [key: string]: any;
+  }
+
+  let contributors = $state<Contributor[]>([]);
   let loading = $state(true);
   let error = $state(false);
   let version = $state(store.version);
@@ -31,6 +42,7 @@
     }
     await fetchContributors();
   });
+
   async function fetchContributors() {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -50,19 +62,19 @@
       const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contributors`);
       if (!res.ok) throw new Error('Failed to fetch list');
       
-      const basicList = await res.json();
+      const basicList: Contributor[] = await res.json();
       const filteredList = basicList.filter((user) => {
         const isBotType = user.type === 'Bot';
         const hasBotName = user.login.toLowerCase().includes('bot');
         return !isBotType && !hasBotName;
       });
+
       const detailPromises = filteredList.map(async (user) => {
         try {
             const detailRes = await fetch(user.url);
             if (detailRes.ok) {
                 const detail = await detailRes.json();
                 return { ...user, bio: detail.bio, name: detail.name || user.login };
-          
             }
         } catch (e) {
             console.warn('Failed to fetch detail for', user.login);
@@ -83,7 +95,7 @@
     }
   }
 
-  function handleLink(e, url) {
+  function handleLink(e: Event, url: string) {
     e.preventDefault();
     API.openLink(url);
   }
@@ -102,10 +114,10 @@
   <div class="action-buttons">
     <md-filled-tonal-button 
        class="action-btn"
-       onclick={(e) => handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`)}
+       onclick={(e: MouseEvent) => handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`)}
        role="button"
        tabindex="0"
-       onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`); }}
+       onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') handleLink(e, `https://github.com/${REPO_OWNER}/${REPO_NAME}`); }}
     >
         <md-icon slot="icon"><svg viewBox="0 0 24 24"><path d={ICONS.github} /></svg></md-icon>
         {store.L.info.projectLink}
@@ -113,7 +125,6 @@
   </div>
 
   <div class="contributors-section">
-   
     <div class="section-title">{store.L.info.contributors}</div>
     <div class="list-wrapper">
         {#if loading}
@@ -121,13 +132,11 @@
                 <div class="skeleton-item">
                     <Skeleton width="40px" height="40px" borderRadius="50%" />
                     <div class="skeleton-text">
-       
                         <Skeleton width="120px" height="16px" />
                         <Skeleton width="180px" height="12px" />
                     </div>
                 </div>
             {/each}
-     
         {:else if error}
             <div class="error-message">
                 {store.L.info.loadFail}
@@ -135,15 +144,14 @@
         {:else}
             <md-list class="contributors-list">
                 {#each contributors as user}
-              
                      <md-list-item 
                         type="link" 
                         href={user.html_url}
                         target="_blank"
-                        onclick={(e) => handleLink(e, user.html_url)}
+                        onclick={(e: MouseEvent) => handleLink(e, user.html_url)}
                         role="link"
                         tabindex="0"
-                        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleLink(e, user.html_url); }}
+                        onkeydown={(e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') handleLink(e, user.html_url); }}
                     >
                         <img slot="start" src={user.avatar_url} alt={user.login} class="c-avatar" loading="lazy" />
                         <div slot="headline">{user.name || user.login}</div>
@@ -154,5 +162,4 @@
         {/if}
     </div>
   </div>
-
 </div>
