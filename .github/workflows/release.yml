@@ -32,6 +32,17 @@ jobs:
           toolchain: nightly
           targets: aarch64-linux-android
           components: rust-src
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.2.0
+        with:
+          run_install: false
+          package_json_file: webui/package.json
+      - name: Setup node
+        uses: actions/setup-node@v6.1.0
+        with:
+          node-version: "lts/*"
+          cache: pnpm
+          cache-dependency-path: webui/pnpm-lock.yaml
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: "ndk-rust"
@@ -43,7 +54,7 @@ jobs:
       - name: Setup Webui deps
         run: |
           cd webui/
-          npm install
+          pnpm install --frozen-lockfile
       - name: Build
         run: |
           export ANDROID_NDK_HOME=$(realpath ~/ndk_temp)
