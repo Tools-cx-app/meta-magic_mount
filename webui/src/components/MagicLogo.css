@@ -1,0 +1,81 @@
+.logo-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.magic-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 120px;
+  max-height: 120px;
+  overflow: visible;
+}
+
+/* 轨道环 */
+.ring-bg {
+  fill: none;
+  stroke: var(--md-sys-color-surface-variant);
+  stroke-width: 2;
+  opacity: 0.3;
+}
+
+.ring-segment {
+  fill: none;
+  stroke: var(--md-sys-color-secondary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+.track-ring {
+  animation: spin-slow 20s linear infinite;
+  transform-origin: 50px 50px;
+}
+
+/* 能量环 */
+.energy-ring {
+  fill: none;
+  stroke: var(--md-sys-color-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 10 10;
+  opacity: 0.8;
+}
+
+.energy-dot {
+  fill: var(--md-sys-color-primary);
+}
+
+.spin-ring {
+  animation: spin-fast 8s linear infinite reverse;
+  transform-origin: 50px 50px;
+}
+
+/* 核心 */
+.core-shadow {
+  fill: var(--md-sys-color-shadow);
+  opacity: 0.2;
+  transform: translate(2px, 2px);
+  transform-origin: 50px 50px;
+}
+
+.core-body {
+  fill: url(#coreGradient);
+}
+
+.static-core {
+  transform-origin: 50px 50px;
+}
+
+/* 动画定义 */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-fast {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}

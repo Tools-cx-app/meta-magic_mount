@@ -1,3 +1,5 @@
+import { createMemo, createRoot,createSignal } from "solid-js";
+
 import type {
   DeviceStatus,
   MagicConfig,
@@ -20,21 +22,21 @@ export interface LogEntry {
 }
 
 function createStore() {
-  let theme = $state("auto");
-  let isSystemDark = $state(false);
-  let lang = $state("en");
-  let seed = $state(DEFAULT_SEED);
-  let loadedLocale = $state<any>(null);
-  let toast = $state({ id: "init", text: "", type: "info", visible: false });
+  const [theme, setThemeSignal] = createSignal("auto");
+  const [isSystemDark, setIsSystemDark] = createSignal(false);
+  const [lang, setLangSignal] = createSignal("en");
+  const [seed, setSeed] = createSignal(DEFAULT_SEED);
+  const [loadedLocale, setLoadedLocale] = createSignal<any>(null);
+  const [toast, setToast] = createSignal({ id: "init", text: "", type: "info", visible: false });
 
-  let fixBottomNav = $state(false);
+  const [fixBottomNav, setFixBottomNav] = createSignal(false);
 
   const availableLanguages = Object.entries(modulesAny)
     .map(([path, moduleData]) => {
       const mod = moduleData;
       const match = path.match(/\/([^/]+)\.json$/);
       const code = match ? match[1] : "en";
-      const name = mod.default?.lang?.display || code.toUpperCase();
+      const name = (mod).default?.lang?.display || code.toUpperCase();
 
       return { code, name };
     })
@@ -49,47 +51,47 @@ function createStore() {
       return a.name.localeCompare(b.name);
     });
 
-  let config = $state<MagicConfig>(DEFAULT_CONFIG);
-  let modules = $state<MagicModule[]>([]);
-  let logs = $state<LogEntry[]>([]);
+  const [config, setConfig] = createSignal<MagicConfig>(DEFAULT_CONFIG);
+  const [modules, setModules] = createSignal<MagicModule[]>([]);
+  const [logs, setLogs] = createSignal<LogEntry[]>([]);
 
-  let device = $state<DeviceStatus>({
+  const [device, setDevice] = createSignal<DeviceStatus>({
     model: "-",
     android: "-",
     kernel: "-",
     selinux: "-",
   });
-  let version = $state("...");
-  let storage = $state<StorageUsage>({
+  const [version, setVersion] = createSignal("...");
+  const [storage, setStorage] = createSignal<StorageUsage>({
     used: "-",
     size: "-",
     percent: "0%",
     type: null,
     hymofs_available: false,
   });
-  let systemInfo = $state<SystemInfo>({
+  const [systemInfo, setSystemInfo] = createSignal<SystemInfo>({
     kernel: "-",
     selinux: "-",
     mountBase: "-",
     activeMounts: [],
   });
-  let activePartitions = $state<string[]>([]);
-  let diagnostics = $state<any[]>([]);
+  const [activePartitions, setActivePartitions] = createSignal<string[]>([]);
+  const [diagnostics, setDiagnostics] = createSignal<any[]>([]);
 
-  let loadingConfig = $state(false);
-  let loadingModules = $state(false);
-  let loadingLogs = $state(false);
-  let loadingStatus = $state(false);
-  let loadingDiagnostics = $state(false);
+  const [loadingConfig, setLoadingConfig] = createSignal(false);
+  const [loadingModules, setLoadingModules] = createSignal(false);
+  const [loadingLogs, setLoadingLogs] = createSignal(false);
+  const [loadingStatus, setLoadingStatus] = createSignal(false);
+  const [loadingDiagnostics, setLoadingDiagnostics] = createSignal(false);
 
-  let savingConfig = $state(false);
-  const savingModules = $state(false);
+  const [savingConfig, setSavingConfig] = createSignal(false);
+  const [savingModules] = createSignal(false);
 
-  const L = $derived(loadedLocale?.default || {});
+  const L = createMemo(() => loadedLocale()?.default || {});
 
-  const modeStats = $derived.by(() => {
+  const modeStats = createMemo(() => {
     const stats = { auto: 0, magic: 0, hymofs: 0 };
-    for (const m of modules) {
+    for (const m of modules()) {
       if (!m.is_mounted) {
         continue;
       }
@@ -99,79 +101,84 @@ function createStore() {
     return stats;
   });
 
+  const toasts = createMemo(() => {
+    const t = toast();
+
+    return t.visible ? [t] : [];
+  });
+
   function showToast(text: string, type = "info") {
     const id = Date.now().toString();
-    toast = { id, text, type, visible: true };
+    setToast({ id, text, type, visible: true });
     setTimeout(() => {
-      if (toast.id === id) {
-        toast.visible = false;
+      if (toast().id === id) {
+        setToast(prev => ({ ...prev, visible: false }));
       }
     }, 3000);
   }
 
   function setTheme(t: string) {
-    theme = t;
+    setThemeSignal(t);
     localStorage.setItem("mm-theme", t);
     applyTheme();
   }
 
   function toggleBottomNavFix() {
-    fixBottomNav = !fixBottomNav;
-    localStorage.setItem("mm-fix-nav", String(fixBottomNav));
+    setFixBottomNav(prev => !prev);
+    localStorage.setItem("mm-fix-nav", String(!fixBottomNav()));
   }
 
   function applyTheme() {
-    const isDark = theme === "auto" ? isSystemDark : theme === "dark";
+    const isDark = theme() === "auto" ? isSystemDark() : theme() === "dark";
     document.documentElement.setAttribute(
       "data-theme",
       isDark ? "dark" : "light",
     );
-    Monet.apply(seed, isDark);
+    Monet.apply(seed(), isDark);
   }
 
   async function loadLocale(code: string) {
-    const path = `../locales/${code}.json`;
     const entry = Object.entries(modulesAny).find(([k]) =>
       k.endsWith(`/${code}.json`),
     );
     if (entry) {
-      loadedLocale = entry[1];
+      setLoadedLocale(entry[1]);
     } else {
       const enEntry = Object.entries(modulesAny).find(([k]) =>
         k.endsWith("/en.json"),
       );
       if (enEntry) {
-        loadedLocale = enEntry[1];
+        setLoadedLocale(enEntry[1]);
       }
     }
   }
 
   function setLang(code: string) {
-    lang = code;
+    setLangSignal(code);
     localStorage.setItem("mm-lang", code);
     loadLocale(code);
   }
 
   async function init() {
     const savedLang = localStorage.getItem("mm-lang") || "en";
-    lang = savedLang;
+    setLangSignal(savedLang);
     await loadLocale(savedLang);
 
     const savedTheme = localStorage.getItem("mm-theme");
     if (savedTheme) {
-      theme = savedTheme;
+      setThemeSignal(savedTheme);
     }
 
     const savedNavFix = localStorage.getItem("mm-fix-nav");
     if (savedNavFix === "true") {
-      fixBottomNav = true;
+      setFixBottomNav(true);
     }
 
     if (!darkModeQuery && typeof window !== "undefined") {
       darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      isSystemDark = darkModeQuery.matches;
+      setIsSystemDark(darkModeQuery.matches);
       darkModeQuery.addEventListener("change", (e) => {
-        isSystemDark = e.matches;
+        setIsSystemDark(e.matches);
         applyTheme();
       });
     }
@@ -179,7 +186,7 @@ function createStore() {
     try {
       const sysColor = await API.fetchSystemColor();
       if (sysColor) {
-        seed = sysColor;
+        setSeed(sysColor);
       }
     } catch {}
 
@@ -189,46 +196,46 @@ function createStore() {
   }
 
   async function loadConfig() {
-    loadingConfig = true;
+    setLoadingConfig(true);
     try {
-      config = await API.loadConfig();
+      setConfig(await API.loadConfig());
     } catch {
       showToast("Failed to load config", "error");
     }
-    loadingConfig = false;
+    setLoadingConfig(false);
   }
 
   async function resetConfig() {
-    loadingConfig = true;
+    setLoadingConfig(true);
     try {
-      config = { ...DEFAULT_CONFIG };
+      setConfig({ ...DEFAULT_CONFIG });
       await saveConfig();
-      showToast(L.common?.resetSuccess || "Config Reset", "success");
+      showToast(L().common?.resetSuccess || "Config Reset", "success");
     } catch {
-      showToast(L.common?.resetFailed || "Failed to reset", "error");
+      showToast(L().common?.resetFailed || "Failed to reset", "error");
     }
-    loadingConfig = false;
+    setLoadingConfig(false);
   }
 
   async function saveConfig() {
-    savingConfig = true;
+    setSavingConfig(true);
     try {
-      await API.saveConfig($state.snapshot(config));
-      showToast(L.common?.saveSuccess || "Saved", "success");
+      await API.saveConfig(config());
+      showToast(L().common?.saveSuccess || "Saved", "success");
     } catch {
       showToast("Failed to save config", "error");
     }
-    savingConfig = false;
+    setSavingConfig(false);
   }
 
   async function loadModules() {
-    loadingModules = true;
+    setLoadingModules(true);
     try {
-      modules = await API.scanModules(config.moduledir);
+      setModules(await API.scanModules(config().moduledir));
     } catch {
       showToast("Failed to load modules", "error");
     }
-    loadingModules = false;
+    setLoadingModules(false);
   }
 
   async function saveModules() {
@@ -237,11 +244,11 @@ function createStore() {
 
   async function loadLogs(silent = false) {
     if (!silent) {
-      loadingLogs = true;
+      setLoadingLogs(true);
     }
     try {
       const rawLogs = await API.readLogs();
-      logs = rawLogs.split("\n").map((line: string) => {
+      setLogs(rawLogs.split("\n").map((line: string) => {
         let type: LogEntry["type"] = "info";
         if (line.includes("[E]") || line.includes("ERROR")) {
           type = "error";
@@ -252,70 +259,71 @@ function createStore() {
         }
 
         return { text: line, type };
-      });
+      }));
     } catch {
-      logs = [{ text: "Failed to load logs.", type: "error" }];
+      setLogs([{ text: "Failed to load logs.", type: "error" }]);
     }
-    loadingLogs = false;
+    setLoadingLogs(false);
   }
 
   async function loadStatus() {
-    loadingStatus = true;
-    loadingDiagnostics = true;
+    setLoadingStatus(true);
+    setLoadingDiagnostics(true);
     try {
       const baseDevice = await API.getDeviceStatus();
-      version = await API.getVersion();
-      storage = await API.getStorageUsage();
-      systemInfo = await API.getSystemInfo();
-      activePartitions = systemInfo.activeMounts || [];
-      diagnostics = [];
+      setVersion(await API.getVersion());
+      setStorage(await API.getStorageUsage());
+      const sysInfo = await API.getSystemInfo();
+      setSystemInfo(sysInfo);
+      setActivePartitions(sysInfo.activeMounts || []);
+      setDiagnostics([]);
 
-      device = {
+      setDevice({
         ...baseDevice,
-        kernel: systemInfo.kernel,
-        selinux: systemInfo.selinux,
-      };
+        kernel: sysInfo.kernel,
+        selinux: sysInfo.selinux,
+      });
 
-      if (modules.length === 0) {
+      if (modules().length === 0) {
         await loadModules();
       }
     } catch {}
-    loadingStatus = false;
-    loadingDiagnostics = false;
+    setLoadingStatus(false);
+    setLoadingDiagnostics(false);
   }
 
   async function rebootDevice() {
     try {
       await API.reboot();
     } catch {
-      showToast(L.common?.rebootFailed || "Reboot failed", "error");
+      showToast(L().common?.rebootFailed || "Reboot failed", "error");
     }
   }
 
   return {
     get theme() {
-      return theme;
+      return theme();
     },
     get isSystemDark() {
-      return isSystemDark;
+      return isSystemDark();
     },
     get lang() {
-      return lang;
+      return lang();
     },
     get seed() {
-      return seed;
+      return seed();
     },
     get availableLanguages() {
       return availableLanguages;
     },
     get L() {
-      return L;
+      return L();
     },
     get toast() {
-      return toast;
+      return toast();
     },
     get toasts() {
-      return toast.visible ? [toast] : [];
+      return toasts();
     },
     showToast,
     setTheme,
@@ -323,74 +331,70 @@ function createStore() {
     init,
 
     get fixBottomNav() {
-      return fixBottomNav;
+      return fixBottomNav();
     },
     toggleBottomNavFix,
 
     get config() {
-      return config;
+      return config();
     },
-    set config(v) {
-      config = v;
-    },
+    setConfig,
     loadConfig,
     saveConfig,
     resetConfig,
 
     get modules() {
-      return modules;
+      return modules();
     },
-    set modules(v) {
-      modules = v;
-    },
+    setModules,
     get modeStats() {
-      return modeStats;
+      return modeStats();
     },
     loadModules,
     saveModules,
 
     get logs() {
-      return logs;
+      return logs();
     },
     loadLogs,
 
     get device() {
-      return device;
+      return device();
     },
     get version() {
-      return version;
+      return version();
     },
     get storage() {
-      return storage;
+      return storage();
     },
     get systemInfo() {
-      return systemInfo;
+      return systemInfo();
     },
     get activePartitions() {
-      return activePartitions;
+      return activePartitions();
     },
     get diagnostics() {
-      return diagnostics;
+      return diagnostics();
     },
     loadStatus,
     rebootDevice,
 
     get loading() {
       return {
-        config: loadingConfig,
-        modules: loadingModules,
-        logs: loadingLogs,
-        status: loadingStatus,
-        diagnostics: loadingDiagnostics,
+        config: loadingConfig(),
+        modules: loadingModules(),
+        logs: loadingLogs(),
+        status: loadingStatus(),
+        diagnostics: loadingDiagnostics(),
       };
     },
     get saving() {
       return {
-        config: savingConfig,
-        modules: savingModules,
+        config: savingConfig(),
+        modules: savingModules(),
       };
     },
   };
 }
 
-export const store = createStore();
+export const store = createRoot(createStore);
