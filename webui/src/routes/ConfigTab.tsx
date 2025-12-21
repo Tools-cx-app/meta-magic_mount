@@ -18,7 +18,9 @@ export default function ConfigTab() {
   const [initialConfigStr, setInitialConfigStr] = createSignal("");
 
   const isValidPath = (p: string) => !p ?? (p.startsWith("/") && p.length > 1);
-  const invalidModuleDir = () => !isValidPath(store.config.moduledir);
+  const invalidModuleDir = createMemo(
+    () => !isValidPath(store.config.moduledir),
+  );
 
   const isDirty = createMemo(() => {
     if (!initialConfigStr()) {

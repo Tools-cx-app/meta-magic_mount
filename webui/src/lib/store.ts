@@ -1,4 +1,4 @@
-import { createMemo, createRoot,createSignal } from "solid-js";
+import { createMemo, createRoot, createSignal } from "solid-js";
 
 import type {
   DeviceStatus,
@@ -27,7 +27,12 @@ function createStore() {
   const [lang, setLangSignal] = createSignal("en");
   const [seed, setSeed] = createSignal(DEFAULT_SEED);
   const [loadedLocale, setLoadedLocale] = createSignal<any>(null);
-  const [toast, setToast] = createSignal({ id: "init", text: "", type: "info", visible: false });
+  const [toast, setToast] = createSignal({
+    id: "init",
+    text: "",
+    type: "info",
+    visible: false,
+  });
 
   const [fixBottomNav, setFixBottomNav] = createSignal(false);
 
@@ -36,7 +41,7 @@ function createStore() {
       const mod = moduleData;
       const match = path.match(/\/([^/]+)\.json$/);
       const code = match ? match[1] : "en";
-      const name = (mod).default?.lang?.display || code.toUpperCase();
+      const name = mod.default?.lang?.display ?? code.toUpperCase();
 
       return { code, name };
     })
@@ -87,7 +92,7 @@ function createStore() {
   const [savingConfig, setSavingConfig] = createSignal(false);
   const [savingModules] = createSignal(false);
 
-  const L = createMemo(() => loadedLocale()?.default || {});
+  const L = createMemo(() => loadedLocale()?.default ?? {});
 
   const modeStats = createMemo(() => {
     const stats = { auto: 0, magic: 0, hymofs: 0 };
@@ -112,7 +117,7 @@ function createStore() {
     setToast({ id, text, type, visible: true });
     setTimeout(() => {
       if (toast().id === id) {
-        setToast(prev => ({ ...prev, visible: false }));
+        setToast((prev) => ({ ...prev, visible: false }));
       }
     }, 3000);
   }
@@ -124,7 +129,7 @@ function createStore() {
   }
 
   function toggleBottomNavFix() {
-    setFixBottomNav(prev => !prev);
+    setFixBottomNav((prev) => !prev);
     localStorage.setItem("mm-fix-nav", String(!fixBottomNav()));
   }
 
@@ -160,7 +165,7 @@ function createStore() {
   }
 
   async function init() {
-    const savedLang = localStorage.getItem("mm-lang") || "en";
+    const savedLang = localStorage.getItem("mm-lang") ?? "en";
     setLangSignal(savedLang);
     await loadLocale(savedLang);
 
@@ -210,9 +215,9 @@ function createStore() {
     try {
       setConfig({ ...DEFAULT_CONFIG });
       await saveConfig();
-      showToast(L().common?.resetSuccess || "Config Reset", "success");
+      showToast(L().common?.resetSuccess ?? "Config Reset", "success");
     } catch {
-      showToast(L().common?.resetFailed || "Failed to reset", "error");
+      showToast(L().common?.resetFailed ?? "Failed to reset", "error");
     }
     setLoadingConfig(false);
   }
@@ -221,7 +226,7 @@ function createStore() {
     setSavingConfig(true);
     try {
       await API.saveConfig(config());
-      showToast(L().common?.saveSuccess || "Saved", "success");
+      showToast(L().common?.saveSuccess ?? "Saved", "success");
     } catch {
       showToast("Failed to save config", "error");
     }
@@ -248,18 +253,20 @@ function createStore() {
     }
     try {
       const rawLogs = await API.readLogs();
-      setLogs(rawLogs.split("\n").map((line: string) => {
-        let type: LogEntry["type"] = "info";
-        if (line.includes("[E]") || line.includes("ERROR")) {
-          type = "error";
-        } else if (line.includes("[W]") || line.includes("WARN")) {
-          type = "warn";
-        } else if (line.includes("[D]") || line.includes("DEBUG")) {
-          type = "debug";
-        }
+      setLogs(
+        rawLogs.split("\n").map((line: string) => {
+          let type: LogEntry["type"] = "info";
+          if (line.includes("[E]") || line.includes("ERROR")) {
+            type = "error";
+          } else if (line.includes("[W]") || line.includes("WARN")) {
+            type = "warn";
+          } else if (line.includes("[D]") || line.includes("DEBUG")) {
+            type = "debug";
+          }
 
-        return { text: line, type };
-      }));
+          return { text: line, type };
+        }),
+      );
     } catch {
       setLogs([{ text: "Failed to load logs.", type: "error" }]);
     }
@@ -296,7 +303,7 @@ function createStore() {
     try {
       await API.reboot();
     } catch {
-      showToast(L().common?.rebootFailed || "Reboot failed", "error");
+      showToast(L().common?.rebootFailed ?? "Reboot failed", "error");
     }
   }
 

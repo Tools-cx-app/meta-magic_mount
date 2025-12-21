@@ -1,4 +1,4 @@
-import { For,createEffect } from "solid-js";
+import { For, createEffect } from "solid-js";
 
 import { ICONS } from "../lib/constants";
 import { store } from "../lib/store";

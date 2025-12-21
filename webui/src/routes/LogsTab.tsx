@@ -2,9 +2,11 @@ import {
   For,
   Show,
   createEffect,
+  createMemo,
   createSignal,
   onCleanup,
   onMount,
+  untrack,
 } from "solid-js";
 
 import BottomActions from "../components/BottomActions";
@@ -27,7 +29,7 @@ export default function LogsTab() {
   let refreshInterval: number | undefined;
   const [userHasScrolledUp, setUserHasScrolledUp] = createSignal(false);
 
-  const filteredLogs = () =>
+  const filteredLogs = createMemo(() =>
     store.logs.filter((line) => {
       const text = typeof line === "string" ? line : line.text;
       const type = typeof line === "string" ? "info" : line.type;
@@ -41,7 +43,8 @@ export default function LogsTab() {
       }
 
       return matchesSearch && matchesLevel;
-    });
+    }),
+  );
 
   async function scrollToBottom() {
     if (logContainer) {
@@ -62,7 +65,7 @@ export default function LogsTab() {
 
   async function refreshLogs(silent = false) {
     await store.loadLogs(silent);
-    if (!silent && !userHasScrolledUp() && logContainer) {
+    if (!silent && !untrack(userHasScrolledUp) && logContainer) {
       logContainer.scrollTop = logContainer.scrollHeight;
     }
   }
@@ -76,9 +79,9 @@ export default function LogsTab() {
       .join("\n");
     try {
       await navigator.clipboard.writeText(text);
-      store.showToast(store.L.logs?.copySuccess || "Copied", "success");
+      store.showToast(store.L.logs?.copySuccess ?? "Copied", "success");
     } catch {
-      store.showToast(store.L.logs?.copyFail || "Failed to copy", "error");
+      store.showToast(store.L.logs?.copyFail ?? "Failed to copy", "error");
     }
   }
 

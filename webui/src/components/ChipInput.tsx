@@ -1,4 +1,4 @@
-import { For, Show,createSignal } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 
 import "./ChipInput.css";
 
@@ -15,7 +15,11 @@ export default function ChipInput(props: ChipInputProps) {
     if (e.key === "Enter" || e.key === "," || e.key === " ") {
       e.preventDefault();
       addChip();
-    } else if (e.key === "Backspace" && inputValue() === "" && props.values.length > 0) {
+    } else if (
+      e.key === "Backspace" &&
+      inputValue() === "" &&
+      props.values.length > 0
+    ) {
       removeChip(props.values.length - 1);
     }
   }
@@ -69,9 +73,17 @@ export default function ChipInput(props: ChipInputProps) {
         enterkeyhint="done"
       />
       <Show when={inputValue().trim().length > 0}>
-        <button class="chip-add-btn" onClick={addChip} tabindex="-1" aria-label="Add chip">
+        <button
+          class="chip-add-btn"
+          onClick={addChip}
+          tabindex="-1"
+          aria-label="Add chip"
+        >
           <svg viewBox="0 0 24 24" width="20" height="20">
-            <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor" />
+            <path
+              d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"
+              fill="currentColor"
+            />
           </svg>
         </button>
       </Show>

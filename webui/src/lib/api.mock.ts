@@ -31,7 +31,7 @@ export const MockAPI = {
     console.log("[MockAPI] saveConfig:", config);
   },
 
-  scanModules: async (moduleDir: string): Promise<MagicModule[]> => {
+  scanModules: async (_moduleDir: string): Promise<MagicModule[]> => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] scanModules");
 
@@ -69,7 +69,7 @@ export const MockAPI = {
     ];
   },
 
-  readLogs: async (logPath?: string, lines?: number): Promise<string> => {
+  readLogs: async (_logPath?: string, _lines?: number): Promise<string> => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] readLogs");
 
@@ -129,6 +129,7 @@ export const MockAPI = {
 
   reboot: async (): Promise<void> => {
     console.log("[MockAPI] Reboot requested");
+    // eslint-disable-next-line no-alert
     alert("Reboot requested (Mock)");
   },
 

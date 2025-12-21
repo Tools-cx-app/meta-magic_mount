@@ -1,4 +1,4 @@
-import { For, Show, createSignal, onMount } from "solid-js";
+import { For, Show, createMemo, createSignal, onMount } from "solid-js";
 
 import BottomActions from "../components/BottomActions";
 import Skeleton from "../components/Skeleton";
@@ -19,14 +19,15 @@ export default function ModulesTab() {
     store.loadModules();
   });
 
-  const filteredModules = () =>
+  const filteredModules = createMemo(() =>
     store.modules.filter((m) => {
       const q = searchQuery().toLowerCase();
       const matchSearch =
         m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
 
       return matchSearch;
-    });
+    }),
+  );
 
   function toggleExpand(id: string) {
     setExpandedId(expandedId() === id ? null : id);
@@ -55,16 +56,18 @@ export default function ModulesTab() {
             </md-icon>
           </div>
           <p class="desc-text">
-            {store.L.modules?.desc ||
+            {store.L.modules?.desc ??
               "Modules are strictly managed by Magic Mount strategy."}
           </p>
         </div>
 
         <div class="search-section">
           <md-outlined-text-field
-            label={store.L.modules?.searchPlaceholder || "Search modules..."}
-            value={searchQuery()}
-            onInput={handleInput}
+            prop:label={
+              store.L.modules?.searchPlaceholder ?? "Search modules..."
+            }
+            prop:value={searchQuery()}
+            on:input={handleInput}
             class="search-field"
           >
             <md-icon slot="leading-icon">
@@ -103,7 +106,7 @@ export default function ModulesTab() {
                 </div>
                 <p>
                   {store.modules.length === 0
-                    ? store.L.modules?.empty || "No modules found"
+                    ? (store.L.modules?.empty ?? "No modules found")
                     : "No matching modules"}
                 </p>
               </div>

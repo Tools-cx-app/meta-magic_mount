@@ -1,4 +1,4 @@
-import { Show, createSignal, onMount } from "solid-js";
+import { Show, createMemo, createSignal, onMount } from "solid-js";
 
 import NavBar from "./components/NavBar";
 import Spinner from "./components/Spinner";
@@ -84,7 +84,7 @@ export default function App() {
     }
   });
 
-  const baseTranslateX = () => TABS.indexOf(activeTab()) * -20;
+  const baseTranslateX = createMemo(() => TABS.indexOf(activeTab()) * -20);
 
   return (
     <div class="app-root">

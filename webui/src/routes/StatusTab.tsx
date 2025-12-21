@@ -1,4 +1,4 @@
-import { Show, createSignal, onMount } from "solid-js";
+import { Show, createMemo, createSignal, onMount } from "solid-js";
 
 import BottomActions from "../components/BottomActions";
 import Skeleton from "../components/Skeleton";
@@ -39,9 +39,12 @@ export default function StatusTab() {
     store.rebootDevice();
   }
 
-  const mountedCount = () =>
-    store.modules?.filter((m) => m.is_mounted).length ?? 0;
-  const isSelinuxEnforcing = () => store.device.selinux === "Enforcing";
+  const mountedCount = createMemo(
+    () => store.modules?.filter((m) => m.is_mounted).length ?? 0,
+  );
+  const isSelinuxEnforcing = createMemo(
+    () => store.device.selinux === "Enforcing",
+  );
 
   return (
     <>

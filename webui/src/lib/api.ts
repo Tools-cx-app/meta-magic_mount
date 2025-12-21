@@ -57,7 +57,6 @@ type KsuExec = (cmd: string) => Promise<KsuExecResult>;
 let ksuExec: KsuExec | null = null;
 
 try {
-  // @ts-expect-error
   const ksu = await import("kernelsu").catch(() => null);
   ksuExec = ksu ? ksu.exec : null;
 } catch {
@@ -153,6 +152,7 @@ function parseKvConfig(text: string): MagicConfig {
 function serializeKvConfig(cfg: MagicConfig): string {
   const q = (s: string) => `"${s}"`;
   const lines = ["# Magic Mount Configuration File", ""];
+  // eslint-disable-next-line unicorn/no-immediate-mutation
   lines.push(`moduledir = ${q(cfg.moduledir)}`);
   if (cfg.tempdir) {
     lines.push(`tempdir = ${q(cfg.tempdir)}`);
@@ -175,7 +175,7 @@ function formatBytes(bytes: number, decimals = 2): string {
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return `${parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`;
+  return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`;
 }
 
 const RealAPI = {
@@ -214,7 +214,7 @@ EOF_CONFIG
     }
   },
 
-  scanModules: async (moduleDir: string): Promise<MagicModule[]> => {
+  scanModules: async (_moduleDir: string): Promise<MagicModule[]> => {
     const cmd = "/data/adb/modules/magic_mount_rs/meta-mm scan --json";
     try {
       const { errno, stdout, stderr } = await ksuExec!(cmd);
@@ -226,7 +226,7 @@ EOF_CONFIG
             id: m.id,
             name: m.name,
             version: m.version,
-            author: m.author || "Unknown",
+            author: m.author ?? "Unknown",
             description: m.description,
             is_mounted: !m.skip,
             mode: "magic",
@@ -262,8 +262,8 @@ EOF_CONFIG
       if (stdout) {
         const parts = stdout.split(/\s+/);
         if (parts.length >= 6) {
-          const total = parseInt(parts[1]) * 1024;
-          const used = parseInt(parts[2]) * 1024;
+          const total = Number.parseInt(parts[1]) * 1024;
+          const used = Number.parseInt(parts[2]) * 1024;
           const percent = parts[4];
 
           return {
@@ -341,7 +341,7 @@ EOF_CONFIG
       if (errno === 0 && stdout) {
         const res = JSON.parse(stdout);
 
-        return res.version || "0.0.0";
+        return res.version ?? "0.0.0";
       }
     } catch {}
 
@@ -363,11 +363,11 @@ EOF_CONFIG
         const match =
           /["']?android\.theme\.customization\.system_palette["']?\s*:\s*["']?#?([0-9a-f]{6,8})["']?/i.exec(
             stdout,
-          ) ||
+          ) ??
           /["']?source_color["']?\s*:\s*["']?#?([0-9a-f]{6,8})["']?/i.exec(
             stdout,
           );
-        if (match && match[1]) {
+        if (match?.[1]) {
           let hex = match[1];
           if (hex.length === 8) {
             hex = hex.slice(2);

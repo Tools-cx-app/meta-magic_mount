@@ -7,11 +7,13 @@ interface SkeletonProps {
   style?: string;
 }
 
-export default (props: SkeletonProps) => (<div
-      class="skeleton"
-      style={{
-        "width": props.width ?? "100%",
-        "height": props.height ?? "20px",
-        "border-radius": props.borderRadius ?? "12px",
-      }}
-    />);
+export default (props: SkeletonProps) => (
+  <div
+    class="skeleton"
+    style={{
+      "width": props.width ?? "100%",
+      "height": props.height ?? "20px",
+      "border-radius": props.borderRadius ?? "12px",
+    }}
+  />
+);
