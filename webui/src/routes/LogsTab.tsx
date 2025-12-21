@@ -137,7 +137,7 @@ export default function LogsTab() {
                 id="auto-refresh"
                 prop:checked={autoRefresh()}
                 on:change={toggleAutoRefresh}
-                prop:touch-target="wrapper"
+                touch-target="wrapper"
               />
               <label for="auto-refresh" class="log-auto-label">
                 Auto
