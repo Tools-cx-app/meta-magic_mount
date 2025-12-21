@@ -32,12 +32,13 @@ pub fn lsetfilecon<P: AsRef<Path>>(path: P, con: &str) -> Result<()> {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     {
         log::debug!("file: {},con: {}", path.as_ref().display(), con);
-        xattr_set(&path, SELINUX_XATTR, con.as_bytes()).with_context(|| {
-            format!(
-                "Failed to change SELinux context for {}",
-                path.as_ref().display()
-            )
-        })?;
+        if let Err(e) = xattr_set(&path, SELINUX_XATTR, con.as_bytes()) {
+            log::warn!(
+                "Failed to change SELinux context for {}, more info {}, skip change!!",
+                path.as_ref().display(),
+                e
+            );
+        }
     }
     Ok(())
 }
