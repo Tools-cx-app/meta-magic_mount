@@ -99,7 +99,7 @@ export default function ConfigTab() {
               <md-outlined-text-field
                 prop:label={store.L.config?.moduleDir}
                 prop:value={store.config.moduledir}
-                onInput={(e: Event) =>
+                on:input={(e: Event) =>
                   handleInput("moduledir", (e.target as HTMLInputElement).value)
                 }
                 prop:error={invalidModuleDir()}
