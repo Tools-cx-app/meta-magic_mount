@@ -28,7 +28,7 @@ pub fn validate_module_id(module_id: &str) -> Result<()> {
     }
 }
 
-pub fn lsetfilecon<P: AsRef<Path>>(path: P, con: &str) -> Result<()> {
+pub fn lsetfilecon<P: AsRef<Path>>(path: P, con: &str) {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     {
         log::debug!("file: {},con: {}", path.as_ref().display(), con);
@@ -40,7 +40,6 @@ pub fn lsetfilecon<P: AsRef<Path>>(path: P, con: &str) -> Result<()> {
             );
         }
     }
-    Ok(())
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
