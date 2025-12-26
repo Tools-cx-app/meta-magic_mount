@@ -126,40 +126,12 @@ impl MagicMount {
         Ok(())
     }
 
-    #[allow(clippy::too_many_lines)]
     fn directory(&mut self) -> Result<()> {
         let mut tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
 
         if !self.has_tmpfs && !tmpfs {
-            for it in &mut self.node.children {
-                let (name, node) = it;
-                let real_path = self.path.join(name);
-                let need = match node.file_type {
-                    NodeFileType::Symlink => true,
-                    NodeFileType::Whiteout => real_path.exists(),
-                    _ => {
-                        if let Ok(metadata) = real_path.symlink_metadata() {
-                            let file_type = NodeFileType::from(metadata.file_type());
-                            file_type != self.node.file_type || file_type == NodeFileType::Symlink
-                        } else {
-                            // real path not exists
-                            true
-                        }
-                    }
-                };
-                if need {
-                    if self.node.module_path.is_none() {
-                        log::error!(
-                            "cannot create tmpfs on {}, ignore: {name}",
-                            self.path.display()
-                        );
-                        node.skip = true;
-                        continue;
-                    }
-                    tmpfs = true;
-                    break;
-                }
-            }
+            self.check_tmpfs();
+            tmpfs = self.has_tmpfs;
         }
         let has_tmpfs = tmpfs || self.has_tmpfs;
 
@@ -291,6 +263,38 @@ impl MagicMount {
         }
 
         Ok(())
+    }
+
+    fn check_tmpfs(&mut self) {
+        for it in &mut self.node.children {
+            let (name, node) = it;
+            let real_path = self.path.join(name);
+            let need = match node.file_type {
+                NodeFileType::Symlink => true,
+                NodeFileType::Whiteout => real_path.exists(),
+                _ => {
+                    if let Ok(metadata) = real_path.symlink_metadata() {
+                        let file_type = NodeFileType::from(metadata.file_type());
+                        file_type != node.file_type || file_type == NodeFileType::Symlink
+                    } else {
+                        true
+                    }
+                }
+            };
+
+            if need {
+                if node.module_path.is_none() {
+                    log::error!(
+                        "cannot create tmpfs on {}, ignore: {name}",
+                        self.path.display()
+                    );
+                    node.skip = true;
+                    continue;
+                }
+                self.has_tmpfs = true;
+                break;
+            }
+        }
     }
 }
 
