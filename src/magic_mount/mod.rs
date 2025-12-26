@@ -126,6 +126,7 @@ impl MagicMount {
         Ok(())
     }
 
+    #[allow(clippy::too_many_lines)]
     fn directory(&mut self) -> Result<()> {
         let mut tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
 
