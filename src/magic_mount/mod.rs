@@ -130,10 +130,35 @@ impl MagicMount {
         let mut tmpfs = !self.has_tmpfs && self.node.replace && self.node.module_path.is_some();
 
         if !self.has_tmpfs && !tmpfs {
-            let (node, ret_tmpfs) = utils::check_tmpfs(&mut self.node, &self.path);
-            self.node = node;
-            self.has_tmpfs = ret_tmpfs;
-            tmpfs = ret_tmpfs;
+            for it in &mut self.node.children {
+                let (name, node) = it;
+                let real_path = self.path.join(name);
+                let need = match node.file_type {
+                    NodeFileType::Symlink => true,
+                    NodeFileType::Whiteout => real_path.exists(),
+                    _ => {
+                        if let Ok(metadata) = real_path.symlink_metadata() {
+                            let file_type = NodeFileType::from(metadata.file_type());
+                            file_type != self.node.file_type || file_type == NodeFileType::Symlink
+                        } else {
+                            // real path not exists
+                            true
+                        }
+                    }
+                };
+                if need {
+                    if self.node.module_path.is_none() {
+                        log::error!(
+                            "cannot create tmpfs on {}, ignore: {name}",
+                            self.path.display()
+                        );
+                        node.skip = true;
+                        continue;
+                    }
+                    tmpfs = true;
+                    break;
+                }
+            }
         }
         let has_tmpfs = tmpfs || self.has_tmpfs;
 
@@ -280,7 +305,7 @@ where
     P: AsRef<Path>,
 {
     if let Some(root) = collect_module_files(module_dir, extra_partitions)? {
-        log::debug!("collected: {root}");
+        log::debug!("collected: {root:?}");
         std::thread::Builder::new()
             .name("GetTree".to_string())
             .spawn(|| -> Result<()> {
