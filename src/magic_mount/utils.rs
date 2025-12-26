@@ -12,7 +12,7 @@ use rustix::{
 
 use crate::{
     defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
-    magic_mount::node::{Node, NodeFileType},
+    magic_mount::node::Node,
     utils::{lgetfilecon, lsetfilecon, validate_module_id},
 };
 
