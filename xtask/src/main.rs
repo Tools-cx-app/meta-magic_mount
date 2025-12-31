@@ -107,6 +107,8 @@ fn update() -> Result<()> {
 
 fn build() -> Result<()> {
     let temp_dir = temp_dir();
+    let toml = fs::read_to_string("Cargo.toml")?;
+    let data: CargoConfig = toml::from_str(&toml)?;
 
     let _ = fs::remove_dir_all(&temp_dir);
     fs::create_dir_all(&temp_dir)?;
@@ -155,7 +157,11 @@ fn build() -> Result<()> {
         .compression_method(CompressionMethod::Deflated)
         .compression_level(Some(9));
     zip_create_from_directory_with_options(
-        &Path::new("output").join(format!("magic_mount_rs-{}.zip", cal_short_hash()?)),
+        &Path::new("output").join(format!(
+            "magic_mount_rs-{}-{}.zip",
+            &data.package.version,
+            cal_short_hash()?
+        )),
         &temp_dir,
         |_| options,
     )
