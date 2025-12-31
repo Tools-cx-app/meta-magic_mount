@@ -55,7 +55,7 @@ partitions = []
 
 * Node.js / npm
 
-* pnpm and vite as dependency in webui
+* pnpm and vite as dependency and frontend for webui
 
 环境变量：
 ```shell
