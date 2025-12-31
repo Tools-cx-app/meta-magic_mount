@@ -225,12 +225,6 @@ fn build_webui() -> Result<()> {
         command
     };
 
-    Command::new("which")
-        .current_dir("webui")
-        .arg("pnpm")
-        .spawn()?
-        .wait()?;
-
     pnpm().args(["run", "build"]).spawn()?.wait()?;
 
     Ok(())
