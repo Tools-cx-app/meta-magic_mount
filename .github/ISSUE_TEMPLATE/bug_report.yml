@@ -1,5 +1,5 @@
 name: Bug Report / 错误报告
-description: Create a report to help us improve Meta-Hybrid Mount / 创建报告以帮助我们改进 Meta-Hybrid Mount
+description: Create a report to help us improve meta-magic_mount / 创建报告以帮助我们改进 meta-magic_mount
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -54,7 +54,7 @@ body:
   - type: input
     id: module_version
     attributes:
-      label: Meta-Hybrid Version / 模块版本
+      label: meta-magic_mount Version / 模块版本
       description: The version of this module installed / 当前安装的模块版本
       placeholder: v1.0.2-r1
     validations:
@@ -90,16 +90,16 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Verbose Hybrid Mount Log / 详细运行日志
+      label: Verbose mmrs Log / 详细运行日志
       description: |
         **CRITICAL / 重要**: 
         1. Go to WebUI -> Config, enable **"Verbose Log"** and click Save.
         2. Reboot or reproduce the issue.
-        3. Paste the content of `/data/adb/meta-hybrid/daemon.log` here.
+        3. Paste the content of `/data/adb/magic_mount/mm.log` here.
         
         1. 请先在 WebUI -> Config (配置) 中开启 **"Verbose Log" (详细日志)** 并保存。
         2. 重启或复现问题。
-        3. 将 `/data/adb/meta-hybrid/daemon.log` 的内容粘贴在下方。
+        3. 将 `/data/adb/magic_mount/mm.log` 的内容粘贴在下方。
       render: shell
     validations:
       required: true
