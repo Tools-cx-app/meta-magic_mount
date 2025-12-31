@@ -49,6 +49,15 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+fn cal_short_hash() -> Result<String> {
+    Ok(String::from_utf8(
+        Command::new("git")
+            .args(["rev-parse", "--short", "HEAD"])
+            .output()?
+            .stdout,
+    )?)
+}
+
 fn cal_version_code(version: &str) -> Result<usize> {
     let manjor = version
         .split('.')
@@ -142,7 +151,7 @@ fn build() -> Result<()> {
         .compression_method(CompressionMethod::Deflated)
         .compression_level(Some(9));
     zip_create_from_directory_with_options(
-        &Path::new("output").join("magic_mount_rs.zip"),
+        &Path::new("output").join(format!("magic_mount_rs-{}.zip", cal_short_hash()?)),
         &temp_dir,
         |_| options,
     )

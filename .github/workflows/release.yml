@@ -63,7 +63,7 @@ jobs:
       - name: Prepare artifacts
         run: |
           mkdir -p output/artifact/
-          unzip "output/magic_mount_rs.zip" -d output/artifact/
+          unzip "output/*.zip" -d output/artifact/
       - name: Upload release version
         uses: actions/upload-artifact@v4
         with:

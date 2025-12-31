@@ -6,6 +6,7 @@ pub const DISABLE_FILE_NAME: &str = "disable";
 pub const REMOVE_FILE_NAME: &str = "remove";
 pub const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
 pub const REPLACE_DIR_XATTR: &str = "trusted.overlay.opaque";
+pub const REPLACE_DIR_FILE_NAME: &str = ".replace";
 
 // config
 pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/magic_mount/config.toml";

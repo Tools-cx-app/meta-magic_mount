@@ -6,11 +6,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use rustix::path::Arg;
-use xattr::get as xattr_get;
 
-use crate::defs::REPLACE_DIR_XATTR;
+use crate::defs::{REPLACE_DIR_FILE_NAME, REPLACE_DIR_XATTR};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum NodeFileType {
@@ -81,6 +80,20 @@ impl Node {
         Ok(has_file)
     }
 
+    fn dir_is_replace<P>(path: P) -> bool
+    where
+        P: AsRef<Path>,
+    {
+        if let Ok(v) = xattr::get(&path, REPLACE_DIR_XATTR)
+            && let Some(s) = v
+            && String::from_utf8_lossy(&s) == "y"
+        {
+            return true;
+        }
+
+        path.as_ref().join(REPLACE_DIR_FILE_NAME).exists()
+    }
+
     pub fn new_root<S>(name: S) -> Self
     where
         S: AsRef<str> + Into<String>,
@@ -108,17 +121,7 @@ impl Node {
                 Some(NodeFileType::from(metadata.file_type()))
             };
             if let Some(file_type) = file_type {
-                let replace = if file_type == NodeFileType::Directory
-                    && let Ok(v) = xattr_get(&path, REPLACE_DIR_XATTR).with_context(|| {
-                        format!("Failed to get SELinux context for {}", path.display())
-                    })
-                    && let Some(s) = v
-                    && String::from_utf8_lossy(&s) == "y"
-                {
-                    true
-                } else {
-                    false
-                };
+                let replace = file_type == NodeFileType::Directory && Self::dir_is_replace(&path);
                 return Some(Self {
                     name: name.into(),
                     file_type,

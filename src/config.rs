@@ -13,6 +13,7 @@ pub struct Config {
     pub mountsource: String,
     pub verbose: bool,
     pub partitions: Vec<String>,
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub umount: bool,
 }
 
