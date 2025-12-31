@@ -55,6 +55,8 @@ partitions = []
 
 * Node.js / npm
 
+* pnpm
+
 环境变量：
 ```shell
 export ANDROID_NDK_HOME=<path/to/ndk>
