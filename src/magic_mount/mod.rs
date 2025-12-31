@@ -327,9 +327,9 @@ where
                     return Ok(());
                 }
 
-                let _ = fs::write(
-                    "/data/adb/magic_mount/tree",
-                    String::from_utf8_lossy(&output?.stdout).to_string(),
+                log::debug!(
+                    "modules tree:\n{}",
+                    String::from_utf8_lossy(&output?.stdout).to_string()
                 );
 
                 Ok(())
