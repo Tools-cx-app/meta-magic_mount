@@ -14,7 +14,7 @@
     "@material/material-color-utilities": "^0.3.0",
     "@material/web": "^2.4.1",
     "kernelsu": "^2.1.1",
-    "solid-js": "^1.9.4"
+    "solid-js": "^1.9.10"
   },
   "devDependencies": {
     "@so1ve/eslint-config": "^3.20.2",
