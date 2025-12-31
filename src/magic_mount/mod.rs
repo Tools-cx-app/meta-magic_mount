@@ -4,6 +4,7 @@ mod utils;
 use std::{
     fs,
     path::{Path, PathBuf},
+    sync::atomic::AtomicU32,
 };
 
 use anyhow::{Context, Result, bail};
@@ -13,7 +14,7 @@ use rustix::mount::{
 };
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-use crate::try_umount::send_unmountable;
+use crate::ksu::try_umount::send_unmountable;
 use crate::{
     magic_mount::{
         node::{Node, NodeFileType},
@@ -21,6 +22,9 @@ use crate::{
     },
     utils::ensure_dir_exists,
 };
+
+static MOUNTDED_FILES: AtomicU32 = AtomicU32::new(0);
+static MOUNTDED_SYMBOLS_FILES: AtomicU32 = AtomicU32::new(0);
 
 struct MagicMount {
     node: Node,
@@ -80,6 +84,8 @@ impl MagicMount {
                     self.work_dir_path.display(),
                 )
             })?;
+            let mounted = MOUNTDED_SYMBOLS_FILES.load(std::sync::atomic::Ordering::Relaxed) + 1;
+            MOUNTDED_SYMBOLS_FILES.store(mounted, std::sync::atomic::Ordering::Relaxed);
             Ok(())
         } else {
             bail!("cannot mount root symlink {}!", self.path.display());
@@ -123,6 +129,9 @@ impl MagicMount {
         if let Err(e) = mount_remount(target, MountFlags::RDONLY | MountFlags::BIND, "") {
             log::warn!("make file {} ro: {e:#?}", target.display());
         }
+
+        let mounted = MOUNTDED_FILES.load(std::sync::atomic::Ordering::Relaxed) + 1;
+        MOUNTDED_FILES.store(mounted, std::sync::atomic::Ordering::Relaxed);
         Ok(())
     }
 
@@ -348,6 +357,9 @@ where
         }
         fs::remove_dir(tmp_dir).ok();
 
+        let mounted_symbols = MOUNTDED_SYMBOLS_FILES.load(std::sync::atomic::Ordering::Relaxed);
+        let mounted_files = MOUNTDED_FILES.load(std::sync::atomic::Ordering::Relaxed);
+        log::info!("mounted files: {mounted_files}, mounted symlinks: {mounted_symbols}");
         ret
     } else {
         log::info!("no modules to mount, skipping!");

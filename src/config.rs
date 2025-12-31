@@ -3,7 +3,7 @@ use std::{fmt, fs, path::PathBuf};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-use crate::defs::CONFIG_FILE_DEFAULT;
+use crate::defs::CONFIG_FILE;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -13,6 +13,7 @@ pub struct Config {
     pub mountsource: String,
     pub verbose: bool,
     pub partitions: Vec<String>,
+    pub tmpfsdir: Option<String>,
     #[cfg(any(target_os = "linux", target_os = "android"))]
     pub umount: bool,
 }
@@ -23,18 +24,6 @@ fn default_moduledir() -> PathBuf {
 
 fn default_mountsource() -> String {
     String::from("KSU")
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            moduledir: default_moduledir(),
-            mountsource: default_mountsource(),
-            verbose: false,
-            umount: false,
-            partitions: Vec::new(),
-        }
-    }
 }
 
 impl fmt::Display for Config {
@@ -53,9 +42,8 @@ impl fmt::Display for Config {
 }
 
 impl Config {
-    pub fn load_default() -> Result<Self> {
-        let content =
-            fs::read_to_string(CONFIG_FILE_DEFAULT).context("failed to read config file")?;
+    pub fn load() -> Result<Self> {
+        let content = fs::read_to_string(CONFIG_FILE).context("failed to read config file")?;
 
         let config: Self = toml::from_str(&content).context("failed to parse config file")?;
 

@@ -15,8 +15,8 @@ importers:
         specifier: ^2.4.1
         version: 2.4.1
       kernelsu:
-        specifier: ^2.1.1
-        version: 2.1.1
+        specifier: ^3.0.0
+        version: 3.0.0
       solid-js:
         specifier: ^1.9.10
         version: 1.9.10
@@ -1835,8 +1835,8 @@ packages:
   kebab-case@1.0.2:
     resolution: {integrity: sha512-7n6wXq4gNgBELfDCpzKc+mRrZFs7D+wgfF5WRFLNAr4DA/qtr9Js8uOAVAfHhuLMfAcQ0pRKqbpjx+TcJVdE1Q==}
 
-  kernelsu@2.1.1:
-    resolution: {integrity: sha512-P5kC9E4NLzdZbU2O6AysMWC2P2a2TM2VU4ugKjh262bm6Q+FelKhcfdbJD/+ZI7m4OAtldb+8U2c7ZxvQvJRdQ==}
+  kernelsu@3.0.0:
+    resolution: {integrity: sha512-7BUHzVe7MOaYV6h9sbhPAf9hFnkXy4Ea1fC1wOF4vrwjExIcFi0OQLSphdZ0sebmIfb14/rgpMXagCYM8RmepQ==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -4571,7 +4571,7 @@ snapshots:
 
   kebab-case@1.0.2: {}
 
-  kernelsu@2.1.1: {}
+  kernelsu@3.0.0: {}
 
   keyv@4.5.4:
     dependencies:

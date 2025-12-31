@@ -3,18 +3,21 @@
 
 mod config;
 mod defs;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod ksu;
 mod magic_mount;
 mod scanner;
-#[cfg(any(target_os = "linux", target_os = "android"))]
-mod try_umount;
 mod utils;
 
-use std::io::Write;
+use std::{io::Write, path::PathBuf};
 
 use anyhow::{Context, Result};
 use env_logger::Builder;
 use mimalloc::MiMalloc;
-use rustix::mount::{MountFlags, mount};
+use rustix::{
+    mount::{MountFlags, mount},
+    path::Arg,
+};
 
 use crate::config::Config;
 
@@ -45,18 +48,18 @@ fn init_logger(verbose: bool) {
 }
 
 fn main() -> Result<()> {
-    let config = Config::load_default().unwrap_or_default();
+    let config = Config::load()?;
 
     let args: Vec<_> = std::env::args().collect();
 
     if args.len() > 1 {
         match args[1].as_str() {
             "scan" => {
-                let json_output = args.len() > 2 && args[2] == "--json";
+                let modules = scanner::scan_modules(&config.moduledir, &config.partitions);
 
-                let modules = scanner::scan_modules(&config.moduledir);
-
-                if json_output {
+                if let Some(s) = args.get(2)
+                    && s.as_str() == "--json"
+                {
                     let json = serde_json::to_string(&modules)?;
                     println!("{json}");
                 } else {
@@ -76,8 +79,9 @@ fn main() -> Result<()> {
 
     init_logger(config.verbose);
 
-    if std::env::var("KSU").is_err() {
+    if !ksu::check_ksu() {
         log::error!("only support KernelSU!!");
+        panic!();
     }
 
     log::info!("Magic Mount Starting");
@@ -88,7 +92,13 @@ fn main() -> Result<()> {
         std::fs::read_to_string("/proc/self/attr/current")?
     );
 
-    let tempdir = utils::select_temp_dir().context("failed to select temp dir automatically")?;
+    let tempdir = if let Some(p) = config.tmpfsdir {
+        PathBuf::from(p)
+    } else {
+        utils::select_temp_dir().context("failed to select temp dir automatically")?
+    };
+
+    let _ = ksu::try_umount::TMPFS.set(tempdir.as_str()?.to_string());
 
     utils::ensure_dir_exists(&tempdir)?;
 

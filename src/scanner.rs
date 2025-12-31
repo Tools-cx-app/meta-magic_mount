@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{collections::HashSet, fs, path::Path};
 
 use serde::Serialize;
 
@@ -6,8 +6,6 @@ use crate::{
     defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
     utils::validate_module_id,
 };
-
-const PERFIX: &[&str] = &["system", "odm"];
 
 #[derive(Debug, Serialize)]
 pub struct ModuleInfo {
@@ -36,7 +34,7 @@ fn read_prop(vaule: &str, key: &str) -> Option<String> {
 /// 1. Do not have a `system` directory.
 /// 2. Are disabled or removed.
 /// 3. Have the `skip_mount` flag.
-pub fn scan_modules<P>(module_dir: P) -> Vec<ModuleInfo>
+pub fn scan_modules<P>(module_dir: P, extra: &[String]) -> Vec<ModuleInfo>
 where
     P: AsRef<Path>,
 {
@@ -54,7 +52,19 @@ where
                 continue;
             }
 
-            if PERFIX.iter().all(|p| !path.join(p).is_dir()) {
+            let mut modified = false;
+            let mut partitions = HashSet::new();
+            partitions.insert("system".to_string());
+            partitions.extend(extra.iter().cloned());
+
+            for p in &partitions {
+                if entry.path().join(p).is_dir() {
+                    modified = true;
+                    break;
+                }
+            }
+
+            if !modified {
                 continue;
             }
 

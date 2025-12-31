@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs::{self, DirEntry, Metadata, create_dir, create_dir_all, read_link},
     os::unix::fs::{MetadataExt, symlink},
     path::{Path, PathBuf},
@@ -109,15 +110,21 @@ pub fn collect_module_files(
     let mut root = Node::new_root("");
     let mut system = Node::new_root("system");
     let module_root = module_dir;
-    let mut has_file = false;
+    let mut has_file = HashSet::new();
+
+    log::debug!("begin collect module files: {}", module_root.display());
 
     for entry in module_root.read_dir()?.flatten() {
         if !entry.file_type()?.is_dir() {
             continue;
         }
 
+        let id = entry.file_name().to_str().unwrap().to_string();
+        log::debug!("processing new module: {id}");
+
         let prop = entry.path().join("module.prop");
         if !prop.exists() {
+            log::debug!("skipped module {id}, because not found module.prop");
             continue;
         }
         let string = fs::read_to_string(prop)?;
@@ -133,20 +140,39 @@ pub fn collect_module_files(
             || entry.path().join(REMOVE_FILE_NAME).exists()
             || entry.path().join(SKIP_MOUNT_FILE_NAME).exists()
         {
+            log::debug!("skipped module {id}, due to disable/remove/skip_mount");
             continue;
         }
 
-        let mod_system = entry.path().join("system");
-        if !mod_system.is_dir() {
+        let mut modified = false;
+        let mut partitions = HashSet::new();
+        partitions.insert("system".to_string());
+        partitions.extend(extra_partitions.iter().cloned());
+
+        for p in &partitions {
+            if entry.path().join(p).is_dir() {
+                modified = true;
+                break;
+            }
+            log::debug!("{id} due not modify {p}");
+        }
+
+        if !modified {
             continue;
         }
 
         log::debug!("collecting {}", entry.path().display());
 
-        has_file |= system.collect_module_files(&mod_system)?;
+        for p in partitions {
+            if !entry.path().join(&p).exists() {
+                continue;
+            }
+
+            has_file.insert(system.collect_module_files(entry.path().join(&p))?);
+        }
     }
 
-    if has_file {
+    if has_file.contains(&true) {
         const BUILTIN_PARTITIONS: [(&str, bool); 4] = [
             ("vendor", true),
             ("system_ext", true),

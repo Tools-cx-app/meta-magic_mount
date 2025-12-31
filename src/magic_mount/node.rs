@@ -7,6 +7,7 @@ use std::{
 };
 
 use anyhow::Result;
+use extattr::lgetxattr;
 use rustix::path::Arg;
 
 use crate::defs::{REPLACE_DIR_FILE_NAME, REPLACE_DIR_XATTR};
@@ -84,9 +85,8 @@ impl Node {
     where
         P: AsRef<Path>,
     {
-        if let Ok(v) = xattr::get(&path, REPLACE_DIR_XATTR)
-            && let Some(s) = v
-            && String::from_utf8_lossy(&s) == "y"
+        if let Ok(v) = lgetxattr(&path, REPLACE_DIR_XATTR)
+            && String::from_utf8_lossy(&v) == "y"
         {
             return true;
         }
@@ -110,8 +110,7 @@ impl Node {
 
     pub fn new_module<S>(name: &S, entry: &DirEntry) -> Option<Self>
     where
-        S: AsRef<str> + Into<String>,
-        std::string::String: for<'a> From<&'a S>,
+        S: ToString,
     {
         if let Ok(metadata) = entry.metadata() {
             let path = entry.path();
@@ -122,8 +121,11 @@ impl Node {
             };
             if let Some(file_type) = file_type {
                 let replace = file_type == NodeFileType::Directory && Self::dir_is_replace(&path);
+                if replace {
+                    log::debug!("{} need replace", path.display());
+                }
                 return Some(Self {
-                    name: name.into(),
+                    name: name.to_string(),
                     file_type,
                     children: HashMap::default(),
                     module_path: Some(path),
