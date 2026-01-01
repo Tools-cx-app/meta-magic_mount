@@ -6,6 +6,7 @@ MODDIR="${0%/*}"
 
 # Binary path (architecture-specific binary selected during installation)
 BINARY="$MODDIR/meta-mm"
+DAEMONIZE="$MODDIR/daemonize-mmrs"
 
 if [ ! -f "$BINARY" ]; then
   log "ERROR: Binary not found: $BINARY"
@@ -16,7 +17,7 @@ if [ -f "/data/adb/magic_mount/mm.log" ]; then
   mv "/data/adb/magic_mount/mm.log" "/data/adb/magic_mount/mm.log.bak"
 fi
 
-nohup $BINARY >"/data/adb/magic_mount/mm.log" 2>&1
+nohup $DAEMONIZE >"/data/adb/magic_mount/mm.log" 2>&1
 
 EXIT_CODE=$?
 

@@ -56,6 +56,8 @@ jobs:
           cd webui/
           pnpm install --frozen-lockfile
       - name: Build
+        env:
+          PRIVATE: ${{ secrets.PRIVATE }}
         run: |
           export ANDROID_NDK_HOME=$(realpath ~/ndk_temp)
           export ANDROID_NDK_ROOT=$ANDROID_NDK_HOME

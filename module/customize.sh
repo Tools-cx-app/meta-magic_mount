@@ -39,7 +39,7 @@ mv "$MODPATH/bin/$ARCH_BINARY" "$MODPATH/meta-mm" || abort "! Failed to rename b
 rm -rf "$MODPATH/bin"
 
 # Ensure the binary is executable
-chmod 755 "$MODPATH/meta-mm" || abort "! Failed to set permissions"
+chmod 755 "$MODPATH/meta-mm" && chmod 755 "$MODPATH/daemonize-mmrs" || abort "! Failed to set permissions"
 
 ui_print "- Architecture-specific binary installed successfully"
 

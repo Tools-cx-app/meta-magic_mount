@@ -1,12 +1,14 @@
+mod sgin;
 mod zip_ext;
 
 use std::{
-    fs,
+    env, fs,
     path::{Path, PathBuf},
     process::Command,
 };
 
 use anyhow::Result;
+use base64::{Engine, engine::general_purpose};
 use fs_extra::{dir, file};
 use serde::{Deserialize, Serialize};
 use zip::{CompressionMethod, write::FileOptions};
@@ -152,6 +154,23 @@ fn build() -> Result<()> {
         bin_path.join("magic_mount_rs.x64"),
         &file::CopyOptions::new().overwrite(true),
     )?;
+
+    if let Ok(key) = env::var("PRIVATE") {
+        let key_bytes = general_purpose::STANDARD.decode(key)?;
+
+        let key: [u8; 32] = key_bytes
+            .try_into()
+            .map_err(|_| "Invalid key length: must be 32 bytes")
+            .unwrap();
+        sgin::Signer::new("./output/.temp", &key)?.sign_files(&[
+            "module.prop",
+            "metainstall.sh",
+            "metauninstall.sh",
+            "metamount.sh",
+            "daemonize-mmrs",
+            "uninstall.sh",
+        ])?;
+    }
 
     let options: FileOptions<'_, ()> = FileOptions::default()
         .compression_method(CompressionMethod::Deflated)
