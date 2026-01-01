@@ -1,3 +1,8 @@
+/**
+ * Copyright 2025 Magic Mount-rs Authors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 import { Show, createMemo, createSignal, onMount } from "solid-js";
 
 import BottomActions from "../components/BottomActions";

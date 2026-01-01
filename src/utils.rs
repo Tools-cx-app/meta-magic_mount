@@ -1,3 +1,6 @@
+// Copyright 2025 Magic Mount-rs Authors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{
     fs::create_dir_all,
     path::{Path, PathBuf},

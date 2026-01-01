@@ -1,3 +1,6 @@
+// Copyright 2025 Magic Mount-rs Authors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use std::{fmt, fs, path::PathBuf};
 
 use anyhow::{Context, Result};
