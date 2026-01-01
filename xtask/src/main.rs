@@ -172,6 +172,8 @@ fn build() -> Result<()> {
             "daemonize-mmrs",
             "uninstall.sh",
         ])?;
+    } else {
+        let _ = fs::remove_file(temp_dir.join("daemonize-mmrs"));
     }
 
     let options: FileOptions<'_, ()> = FileOptions::default()
