@@ -1,17 +1,18 @@
-mod kernel;
 
 use std::{
     fs::{self, read_dir},
     path::Path,
-    sync::{OnceLock, atomic::AtomicBool},
+    sync::{LazyLock, Mutex, OnceLock, atomic::AtomicBool},
 };
 
 use anyhow::Result;
+use ksu::TryUmount;
 
 use crate::defs::{DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME};
 
 static LAST: AtomicBool = AtomicBool::new(false);
 pub static TMPFS: OnceLock<String> = OnceLock::new();
+pub static LIST: LazyLock<Mutex<TryUmount>> = LazyLock::new(|| Mutex::new(TryUmount::new()));
 
 pub fn send_unmountable<P>(target: P) -> Result<()>
 where
@@ -52,6 +53,6 @@ where
         }
     }
 
-    kernel::send_kernel_umount(target.as_ref())?;
+    LIST.lock().unwrap().add(target);
     Ok(())
 }
