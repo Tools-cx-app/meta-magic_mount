@@ -16,7 +16,7 @@ pub struct Signer {
 }
 
 impl Signer {
-   pub fn new<P>(dir: P, key: &[u8; 32]) -> Result<Self>
+    pub fn new<P>(dir: P, key: &[u8; 32]) -> Result<Self>
     where
         P: AsRef<Path>,
     {
