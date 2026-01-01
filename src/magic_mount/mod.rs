@@ -329,7 +329,7 @@ where
 
                 log::debug!(
                     "modules tree:\n{}",
-                    String::from_utf8_lossy(&output?.stdout).to_string()
+                    String::from_utf8_lossy(&output?.stdout)
                 );
 
                 Ok(())
