@@ -356,6 +356,10 @@ where
             log::error!("failed to unmount tmp {e}");
         }
         crate::ksu::try_umount::LIST.lock().unwrap().flags(2);
+        crate::ksu::try_umount::LIST
+            .lock()
+            .unwrap()
+            .format_msg(|p| format!("umount {p:?} successful"));
         crate::ksu::try_umount::LIST.lock().unwrap().umount()?;
         fs::remove_dir(tmp_dir).ok();
 

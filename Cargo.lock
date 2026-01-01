@@ -454,10 +454,11 @@ dependencies = [
 [[package]]
 name = "ksu"
 version = "0.1.0"
-source = "git+https://github.com/Tools-cx-app/ksu.git#23c3219c054f66cc990524c247b160e4771bbf5e"
+source = "git+https://github.com/Tools-cx-app/ksu.git#f6b970024d7fb1dab0432dcdf39efe17921478a2"
 dependencies = [
  "anyhow",
  "libc",
+ "log",
  "nix",
  "rustix",
 ]
