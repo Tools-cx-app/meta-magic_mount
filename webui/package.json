@@ -18,8 +18,8 @@
     "solid-js": "^1.9.10"
   },
   "devDependencies": {
-    "@so1ve/eslint-config": "^4.1.5",
-    "@so1ve/prettier-config": "^4.1.5",
+    "@so1ve/eslint-config": "^4.1.8",
+    "@so1ve/prettier-config": "^4.1.8",
     "@typescript/native-preview": "7.0.0-dev.20251221.1",
     "eslint": "^9.39.2",
     "prettier": "^3.7.4",
