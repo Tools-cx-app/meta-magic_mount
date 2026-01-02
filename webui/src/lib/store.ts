@@ -134,8 +134,12 @@ function createStore() {
   }
 
   function toggleBottomNavFix() {
-    setFixBottomNav((prev) => !prev);
-    localStorage.setItem("mm-fix-nav", String(!fixBottomNav()));
+    setFixBottomNav((prev) => {
+      const newValue = !prev;
+      localStorage.setItem("mm-fix-nav", String(newValue));
+
+      return newValue;
+    });
   }
 
   function applyTheme() {
