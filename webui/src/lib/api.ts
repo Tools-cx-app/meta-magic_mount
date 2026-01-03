@@ -253,15 +253,6 @@ EOF_CONFIG
     return [];
   },
 
-  readLogs: async (logPath = PATHS.LOG_FILE, lines = 1000): Promise<string> => {
-    const cmd = `[ -f "${logPath}" ] && tail -n ${lines} "${logPath}" || echo ""`;
-    const { errno, stdout, stderr } = await ksuExec!(cmd);
-    if (errno === 0) {
-      return stdout || "";
-    }
-    throw new Error(stderr || "Log file not found");
-  },
-
   getStorageUsage: async (): Promise<StorageUsage> => {
     try {
       const { stdout } = await ksuExec!("df -k /data/adb/modules | tail -n 1");

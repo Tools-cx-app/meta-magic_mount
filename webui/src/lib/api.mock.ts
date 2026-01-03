@@ -75,24 +75,6 @@ export const MockAPI = {
     ];
   },
 
-  readLogs: async (_logPath?: string, _lines?: number): Promise<string> => {
-    await delay(MOCK_DELAY);
-    console.log("[MockAPI] readLogs");
-
-    return `[I] Magic Mount Daemon v1.0.0 started
-[I] Mounting source: KSU
-[I] Loading config from /data/adb/magic_mount/config.toml
-[D] Verbose logging enabled
-[I] Scanned 3 modules
-[I] Mounting youtube-revanced... Success
-[I] Mounting pixelfy-gphotos... Success
-[W] Skipping sound-enhancer: disable file found
-[I] OverlayFS mounted on /system/product
-[I] OverlayFS mounted on /system/vendor
-[E] Failed to mount /system/my_custom_partition: No such file or directory
-[I] Daemon loop active`;
-  },
-
   getStorageUsage: async (): Promise<StorageUsage> => {
     await delay(MOCK_DELAY);
 

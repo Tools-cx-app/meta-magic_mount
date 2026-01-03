@@ -15,7 +15,6 @@ export const DEFAULT_CONFIG = {
 };
 export const PATHS = {
   CONFIG: "/data/adb/magic_mount/config.toml",
-  LOG_FILE: "/data/adb/magic_mount/mm.log",
   MODULE_ROOT: "/data/adb/modules",
   DAEMON_STATE: "/data/adb/magic_mount/run/daemon_state.json",
 };

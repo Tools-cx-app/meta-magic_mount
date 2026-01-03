@@ -20,7 +20,6 @@
     "status": "Status",
     "config": "Config",
     "modules": "Modules",
-    "logs": "Logs",
     "info": "Info"
   },
   "status": {
@@ -32,13 +31,12 @@
     "androidLabel": "Android",
     "kernelLabel": "Kernel",
     "selinuxLabel": "SELinux",
-    "copy": "Copy Info"
+    "copy": "Copy Info",
+    "copySuccess": "Copied to clipboard",
+    "refresh": "Refresh"
   },
   "config": {
     "title": "Configuration",
-    "verboseLabel": "Verbose Logging",
-    "verboseOff": "Off",
-    "verboseOn": "On",
     "umountLabel": "Disable Unmount Modules",
     "umountOff": "Default",
     "umountOn": "Enabled",
@@ -47,7 +45,6 @@
     "tempDir": "Temp Directory",
     "mountSource": "Mount Source",
     "mountSourceDesc": "Global mount source namespace (e.g. KSU)",
-    "logFile": "Log File",
     "partitions": "Extra Partitions",
     "partitionsDesc": "Add partitions to mount",
     "autoPlaceholder": "Auto-select if empty",
@@ -76,25 +73,6 @@
     "filterLabel": "Filter:",
     "filterAll": "All",
     "toggleError": "Failed to toggle"
-  },
-  "logs": {
-    "title": "System Logs",
-    "loading": "Loading logs...",
-    "refresh": "Refresh",
-    "empty": "Log file is empty",
-    "readFailed": "Failed to read logs",
-    "readException": "Error reading log file",
-    "searchPlaceholder": "Search logs...",
-    "filterLabel": "Level:",
-    "levels": {
-      "all": "All",
-      "info": "Info",
-      "warn": "Warn",
-      "error": "Error"
-    },
-    "copy": "Copy",
-    "copySuccess": "Copied to clipboard",
-    "copyFail": "Failed to copy"
   },
   "info": {
     "title": "About",

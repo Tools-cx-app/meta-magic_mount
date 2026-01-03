@@ -33,7 +33,7 @@ export default function StatusTab() {
       `SELinux: ${store.device.selinux}`;
     navigator.clipboard.writeText(info);
     store.showToast(
-      store.L.logs?.copySuccess ?? "Copied to clipboard",
+      store.L.status?.copySuccess ?? "Copied to clipboard",
       "success",
     );
   }
@@ -226,7 +226,7 @@ export default function StatusTab() {
         <md-filled-tonal-icon-button
           on:click={() => store.loadStatus()}
           prop:disabled={store.loading.status}
-          prop:title={store.L.logs?.refresh}
+          prop:title={store.L.status?.refresh}
         >
           <md-icon>
             <svg viewBox="0 0 24 24">

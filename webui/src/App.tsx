@@ -11,16 +11,15 @@ import Spinner from "./components/Spinner";
 import Toast from "./components/Toast";
 import TopBar from "./components/TopBar";
 import { store } from "./lib/store";
+import type { TabId } from "./lib/tabs";
+import { TABS } from "./lib/tabs";
 import ConfigTab from "./routes/ConfigTab";
 import InfoTab from "./routes/InfoTab";
-import LogsTab from "./routes/LogsTab";
 import ModulesTab from "./routes/ModulesTab";
 import StatusTab from "./routes/StatusTab";
 
-const TABS = ["status", "config", "modules", "logs", "info"];
-
 export default function App() {
-  const [activeTab, setActiveTab] = createSignal("status");
+  const [activeTab, setActiveTab] = createSignal<TabId>("status");
   const [dragOffset, setDragOffset] = createSignal(0);
   const [isDragging, setIsDragging] = createSignal(false);
   const [containerWidth, setContainerWidth] = createSignal(0);
@@ -28,7 +27,7 @@ export default function App() {
   let touchStartX = 0;
   let touchStartY = 0;
 
-  function switchTab(id: string) {
+  function switchTab(id: TabId) {
     setActiveTab(id);
   }
 
@@ -53,7 +52,7 @@ export default function App() {
     if (e.cancelable) {
       e.preventDefault();
     }
-    const currentIndex = TABS.indexOf(activeTab());
+    const currentIndex = TABS.findIndex((t) => t.id === activeTab());
     if (
       (currentIndex === 0 && diffX > 0) ||
       (currentIndex === TABS.length - 1 && diffX < 0)
@@ -69,7 +68,7 @@ export default function App() {
     }
     setIsDragging(false);
     const threshold = containerWidth() * 0.33 || 80;
-    const currentIndex = TABS.indexOf(activeTab());
+    const currentIndex = TABS.findIndex((t) => t.id === activeTab());
     let nextIndex = currentIndex;
     if (dragOffset() < -threshold && currentIndex < TABS.length - 1) {
       nextIndex = currentIndex + 1;
@@ -77,7 +76,7 @@ export default function App() {
       nextIndex = currentIndex - 1;
     }
     if (nextIndex !== currentIndex) {
-      switchTab(TABS[nextIndex]);
+      switchTab(TABS[nextIndex].id);
     }
     setDragOffset(0);
   }
@@ -90,7 +89,9 @@ export default function App() {
     }
   });
 
-  const baseTranslateX = createMemo(() => TABS.indexOf(activeTab()) * -20);
+  const baseTranslateX = createMemo(
+    () => TABS.findIndex((t) => t.id === activeTab()) * -20,
+  );
 
   return (
     <div class="app-root">
@@ -150,11 +151,6 @@ export default function App() {
             <div class="swipe-page">
               <div class="page-scroller">
                 <ModulesTab />
-              </div>
-            </div>
-            <div class="swipe-page">
-              <div class="page-scroller">
-                <LogsTab />
               </div>
             </div>
             <div class="swipe-page">

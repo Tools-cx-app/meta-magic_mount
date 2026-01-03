@@ -22,11 +22,6 @@ const modulesAny: Record<string, any> = localeModules;
 
 let darkModeQuery: MediaQueryList;
 
-export interface LogEntry {
-  text: string;
-  type: "info" | "error" | "warn" | "debug";
-}
-
 function createStore() {
   const [theme, setThemeSignal] = createSignal("auto");
   const [isSystemDark, setIsSystemDark] = createSignal(false);
@@ -64,7 +59,6 @@ function createStore() {
 
   const [config, setConfig] = createSignal<MagicConfig>(DEFAULT_CONFIG);
   const [modules, setModules] = createSignal<MagicModule[]>([]);
-  const [logs, setLogs] = createSignal<LogEntry[]>([]);
 
   const [device, setDevice] = createSignal<DeviceStatus>({
     model: "-",
@@ -91,7 +85,6 @@ function createStore() {
 
   const [loadingConfig, setLoadingConfig] = createSignal(false);
   const [loadingModules, setLoadingModules] = createSignal(false);
-  const [loadingLogs, setLoadingLogs] = createSignal(false);
   const [loadingStatus, setLoadingStatus] = createSignal(false);
   const [loadingDiagnostics, setLoadingDiagnostics] = createSignal(false);
 
@@ -257,32 +250,6 @@ function createStore() {
     showToast("Not supported in this version", "info");
   }
 
-  async function loadLogs(silent = false) {
-    if (!silent) {
-      setLoadingLogs(true);
-    }
-    try {
-      const rawLogs = await API.readLogs();
-      setLogs(
-        rawLogs.split("\n").map((line: string) => {
-          let type: LogEntry["type"] = "info";
-          if (line.includes("[E]") || line.includes("ERROR")) {
-            type = "error";
-          } else if (line.includes("[W]") || line.includes("WARN")) {
-            type = "warn";
-          } else if (line.includes("[D]") || line.includes("DEBUG")) {
-            type = "debug";
-          }
-
-          return { text: line, type };
-        }),
-      );
-    } catch {
-      setLogs([{ text: "Failed to load logs.", type: "error" }]);
-    }
-    setLoadingLogs(false);
-  }
-
   async function loadStatus() {
     setLoadingStatus(true);
     setLoadingDiagnostics(true);
@@ -370,11 +337,6 @@ function createStore() {
     loadModules,
     saveModules,
 
-    get logs() {
-      return logs();
-    },
-    loadLogs,
-
     get device() {
       return device();
     },
@@ -400,7 +362,6 @@ function createStore() {
       return {
         config: loadingConfig(),
         modules: loadingModules(),
-        logs: loadingLogs(),
         status: loadingStatus(),
         diagnostics: loadingDiagnostics(),
       };

@@ -6,23 +6,16 @@
 
 import { For, createEffect } from "solid-js";
 
-import { ICONS } from "../lib/constants";
 import { store } from "../lib/store";
+import type { TabId } from "../lib/tabs";
+import { TABS } from "../lib/tabs";
 
 import "./NavBar.css";
 
 interface NavBarProps {
-  activeTab: string;
-  onTabChange: (id: string) => void;
+  activeTab: TabId;
+  onTabChange: (id: TabId) => void;
 }
-
-const TABS = [
-  { id: "status", icon: ICONS.home },
-  { id: "config", icon: ICONS.settings },
-  { id: "modules", icon: ICONS.modules },
-  { id: "logs", icon: ICONS.description },
-  { id: "info", icon: ICONS.info },
-];
 
 export default function NavBar(props: NavBarProps) {
   let navContainer: HTMLElement | undefined;

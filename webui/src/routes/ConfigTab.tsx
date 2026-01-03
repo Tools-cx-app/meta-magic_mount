@@ -195,25 +195,6 @@ export default function ConfigTab() {
         <section class="config-group">
           <div class="options-grid">
             <button
-              class={`option-tile clickable primary ${store.config.verbose ? "active" : ""}`}
-              onClick={() => toggle("verbose")}
-            >
-              <md-ripple />
-              <div class="tile-top">
-                <div class="tile-icon">
-                  <md-icon>
-                    <svg viewBox="0 0 24 24">
-                      <path d={ICONS.description} />
-                    </svg>
-                  </md-icon>
-                </div>
-              </div>
-              <div class="tile-bottom">
-                <span class="tile-label">{store.L.config?.verboseLabel}</span>
-              </div>
-            </button>
-
-            <button
               class={`option-tile clickable tertiary ${store.config.disable_umount ? "active" : ""}`}
               onClick={() => toggle("disable_umount")}
             >
