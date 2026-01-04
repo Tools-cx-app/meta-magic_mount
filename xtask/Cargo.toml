@@ -15,6 +15,6 @@ toml = "0.9.10"
 zip = "7.0.0"
 ed25519-dalek = { version = "2.2.0", features = ["rand_core"] }
 hex = "0.4.3"
-rand_core = { version = "0.6.4", features = ["getrandom"], default-features = false }
+rand_core = { version = "0.9.3", features = ["getrandom"], default-features = false }
 sha2 = "0.10.9"
 base64 = "0.22.1"
