@@ -18,9 +18,7 @@ export const MockAPI: APIType = {
 
     return {
       ...DEFAULT_CONFIG,
-      moduledir: "/data/adb/modules",
       mountsource: "KSU",
-      verbose: true,
       umount: true,
       partitions: ["product", "system_ext", "vendor"],
     };
@@ -31,7 +29,7 @@ export const MockAPI: APIType = {
     console.log("[MockAPI] saveConfig:", config);
   },
 
-  scanModules: async (_moduleDir) => {
+  scanModules: async () => {
     await delay(MOCK_DELAY);
     console.log("[MockAPI] scanModules");
 

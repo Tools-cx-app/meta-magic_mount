@@ -26,18 +26,14 @@ Configuration file path:
 Example:
 
 ```toml
-moduledir = "/data/adb/modules/"
 mountsource = "KSU"
-verbose = false
 umount = false
 partitions = []
 ```
 
 | Field | Description |
 | ------------- | -------------- |
-| `moduledir` | Systemless module directory used to scan and load module contents to be mounted. |
 | `mountsource` | Identifier for the Systemless mount source. Default is `"KSU"` to match KernelSU behavior. |
-| `verbose` | Whether to output debug logs. `true` will show detailed mount information. |
 | `umount` | Whether to attempt unmount (depends on KernelSU's umount). |
 | `partitions` | A list of specific partitions to perform Systemless operations on, e.g. `"mi_ext"`, `"my_stock"`. |
 | `tmpfsdir` | Temporary directory, default is `/debug_ramdisk`. This option is optional. |

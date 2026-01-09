@@ -46,7 +46,7 @@ export interface DeviceStatus {
 export interface APIType {
   loadConfig: () => Promise<MagicConfig>;
   saveConfig: (config: MagicConfig) => Promise<void>;
-  scanModules: (moduleDir: string) => Promise<MagicModule[]>;
+  scanModules: () => Promise<MagicModule[]>;
   getStorageUsage: () => Promise<StorageUsage>;
   getSystemInfo: () => Promise<SystemInfo>;
   getDeviceStatus: () => Promise<DeviceStatus>;

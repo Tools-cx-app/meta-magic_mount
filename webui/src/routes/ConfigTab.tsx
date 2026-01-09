@@ -23,11 +23,6 @@ import "@material/web/ripple/ripple.js";
 export default function ConfigTab() {
   const [initialConfigStr, setInitialConfigStr] = createSignal("");
 
-  const isValidPath = (p: string) => !p || (p.startsWith("/") && p.length > 1);
-  const invalidModuleDir = createMemo(
-    () => !isValidPath(store.config.moduledir),
-  );
-
   const isDirty = createMemo(() => {
     if (!initialConfigStr()) {
       return false;
@@ -48,11 +43,6 @@ export default function ConfigTab() {
   });
 
   function save() {
-    if (invalidModuleDir()) {
-      store.showToast(store.L.config.invalidPath, "error");
-
-      return;
-    }
     store.saveConfig().then(() => {
       setInitialConfigStr(JSON.stringify(store.config));
     });
@@ -83,43 +73,6 @@ export default function ConfigTab() {
     <>
       <div class="config-container">
         <section class="config-group">
-          <div class="config-card">
-            <div class="card-header">
-              <div class="card-icon">
-                <md-icon>
-                  <svg viewBox="0 0 24 24">
-                    <path d={ICONS.modules} />
-                  </svg>
-                </md-icon>
-              </div>
-              <div class="card-text">
-                <span class="card-title">{store.L.config.moduleDir}</span>
-                <span class="card-desc">{store.L.config.moduleDirDesc}</span>
-              </div>
-            </div>
-
-            <div class="input-stack">
-              <md-outlined-text-field
-                prop:label={store.L.config.moduleDir}
-                prop:value={store.config.moduledir}
-                on:input={(e: Event) =>
-                  handleInput("moduledir", (e.target as HTMLInputElement).value)
-                }
-                prop:error={invalidModuleDir()}
-                supporting-text={
-                  invalidModuleDir() ? store.L.config.invalidPath : ""
-                }
-                class="full-width-field"
-              >
-                <md-icon slot="leading-icon">
-                  <svg viewBox="0 0 24 24">
-                    <path d={ICONS.modules} />
-                  </svg>
-                </md-icon>
-              </md-outlined-text-field>
-            </div>
-          </div>
-
           <div class="config-card">
             <div class="card-header">
               <div class="card-icon">
@@ -185,8 +138,8 @@ export default function ConfigTab() {
         <section class="config-group">
           <div class="options-grid">
             <button
-              class={`option-tile clickable tertiary ${store.config.disable_umount ? "active" : ""}`}
-              onClick={() => toggle("disable_umount")}
+              class={`option-tile clickable tertiary ${store.config.umount ? "active" : ""}`}
+              onClick={() => toggle("umount")}
             >
               <md-ripple />
               <div class="tile-top">

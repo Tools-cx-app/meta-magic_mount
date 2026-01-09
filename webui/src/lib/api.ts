@@ -79,20 +79,12 @@ function parseKvConfig(text: string): MagicConfig {
       value = stripQuotes(value);
 
       switch (key) {
-        case "moduledir": {
-          result.moduledir = value;
-          break;
-        }
         case "tempdir": {
           result.tempdir = value;
           break;
         }
         case "mountsource": {
           result.mountsource = value;
-          break;
-        }
-        case "verbose": {
-          result.verbose = isTrueValue(rawValue);
           break;
         }
         case "umount": {
@@ -114,13 +106,11 @@ function serializeKvConfig(cfg: MagicConfig): string {
   const q = (s: string) => `"${s}"`;
   const lines = ["# Magic Mount Configuration File", ""];
 
-  lines.push(`moduledir = ${q(cfg.moduledir)}`);
   if (cfg.tempdir) {
     lines.push(`tempdir = ${q(cfg.tempdir)}`);
   }
   lines.push(`mountsource = ${q(cfg.mountsource)}`);
-  lines.push(`verbose = ${cfg.verbose}`);
-  lines.push(`umount = ${!cfg.disable_umount}`);
+  lines.push(`umount = ${cfg.umount}`);
   const parts = cfg.partitions.map((p) => q(p)).join(", ");
   lines.push(`partitions = [${parts}]`);
 
@@ -146,18 +136,13 @@ const RealAPI: APIType = {
         `[ -f "${PATHS.CONFIG}" ] && cat "${PATHS.CONFIG}" || echo ""`,
       );
       if (errno === 0 && stdout.trim()) {
-        const raw = parseKvConfig(stdout);
-
-        return {
-          ...raw,
-          disable_umount: !raw.umount,
-        };
+        return parseKvConfig(stdout);
       }
     } catch (e) {
       console.error("Config load error:", e);
     }
 
-    return { ...DEFAULT_CONFIG, disable_umount: !DEFAULT_CONFIG.umount };
+    return DEFAULT_CONFIG;
   },
 
   saveConfig: async (config) => {
@@ -175,7 +160,7 @@ EOF_CONFIG
     }
   },
 
-  scanModules: async (_moduleDir) => {
+  scanModules: async () => {
     const cmd = "/data/adb/modules/magic_mount_rs/meta-mm scan --json";
     try {
       const { errno, stdout, stderr } = await ksuExec!(cmd);

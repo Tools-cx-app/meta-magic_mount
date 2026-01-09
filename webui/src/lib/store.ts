@@ -198,7 +198,7 @@ function createStore() {
   async function loadModules() {
     setLoadingModules(true);
     try {
-      setModules(await API.scanModules(config().moduledir));
+      setModules(await API.scanModules());
     } catch {
       showToast("Failed to load modules", "error");
     }

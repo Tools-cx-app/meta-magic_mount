@@ -26,18 +26,14 @@
 `/data/adb/magic_mount/config.toml`
 
 ```toml
-moduledir = "/data/adb/modules/"
 mountsource = "KSU"
-verbose = false
 umount = false
 partitions = []
 ```
 
 | 字段 | 说明 |
 | ------------- | -------------- |
-| moduledir | Systemless 模块目录，用于扫描并加载需要挂载的模块内容。 |
 | mountsource | Systemless 挂载来源标识。默认值 "KSU" 与 KernelSU 行为保持一致。 |
-| verbose | 是否输出调试日志。true 将显示详细挂载信息。 |
 | umount | 是否尝试卸载（依赖 KernelSU umount ）。 |
 | partitions | 指定需要进行 Systemless 操作的特定分区列表，例如 "mi_ext","my_stock" 等。 |
 | tmpfsdir | 临时目录，默认 "/debug_ramdisk"，此选项可选。 |
