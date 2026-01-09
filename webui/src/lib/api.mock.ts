@@ -25,7 +25,6 @@ export const MockAPI = {
     return {
       ...DEFAULT_CONFIG,
       mountsource: "KSU",
-      verbose: true,
       umount: true,
       partitions: ["product", "system_ext", "vendor"],
     };

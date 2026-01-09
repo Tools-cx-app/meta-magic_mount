@@ -10,7 +10,6 @@ import { DEFAULT_CONFIG, PATHS } from "./constants";
 export interface MagicConfig {
   tempdir?: string;
   mountsource: string;
-  verbose: boolean;
   umount: boolean;
   disable_umount?: boolean;
   partitions: string[];
@@ -131,10 +130,6 @@ function parseKvConfig(text: string): MagicConfig {
           result.mountsource = value;
           break;
         }
-        case "verbose": {
-          result.verbose = isTrueValue(rawValue);
-          break;
-        }
         case "umount": {
           result.umount = isTrueValue(rawValue);
           break;
@@ -158,7 +153,6 @@ function serializeKvConfig(cfg: MagicConfig): string {
     lines.push(`tempdir = ${q(cfg.tempdir)}`);
   }
   lines.push(`mountsource = ${q(cfg.mountsource)}`);
-  lines.push(`verbose = ${cfg.verbose}`);
   lines.push(`umount = ${!cfg.disable_umount}`);
   const parts = cfg.partitions.map((p) => q(p)).join(", ");
   lines.push(`partitions = [${parts}]`);
