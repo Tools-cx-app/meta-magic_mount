@@ -1,10 +1,7 @@
 export interface MagicConfig {
-  moduledir: string;
   tempdir?: string;
   mountsource: string;
-  verbose: boolean;
   umount: boolean;
-  disable_umount?: boolean;
   partitions: string[];
 }
 
