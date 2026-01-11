@@ -13,8 +13,6 @@ Provide systemless mount capabilities for KernelSU.
 
 The author will update this project less frequently due to academic commitments.
 
-Distribution to any domestic (Chinese) platform without permission is prohibited.
-
 ---
 
 ## Configuration
