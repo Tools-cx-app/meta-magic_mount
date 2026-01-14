@@ -43,7 +43,15 @@ mkdir -p /data/adb/magic_mount
 
 if [ ! -f /data/adb/magic_mount/config.toml ]; then
   ui_print "- Add default config"
-  cat "$MODPATH/config.toml" >/data/adb/magic_mount/config.toml
+  if [ $APATCH ]; then
+    cat "$MODPATH/config_apatch.toml" >/data/adb/magic_mount/config.toml
+  fi
+
+  if [ $KSU ]; then
+    cat "$MODPATH/config.toml" >/data/adb/magic_mount/config.toml
+  fi
+
+  
 fi
 
 ui_print "- Installation complete"
