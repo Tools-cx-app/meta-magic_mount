@@ -35,7 +35,7 @@
   },
   "config": {
     "title": "配置",
-    "umountLabel": "开启Umount",
+    "umountLabel": "开启 Umount",
     "umountOff": "默认",
     "umountOn": "强制卸载",
     "tempDir": "临时挂载点",
