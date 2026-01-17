@@ -37,7 +37,7 @@
   },
   "config": {
     "title": "Настройки",
-    "umountLabel": "Включить Umount",
+    "umountLabel": "Вкл. Umount",
     "umountOff": "По умолчанию",
     "umountOn": "Включено",
     "tempDir": "Времен. путь",
@@ -54,7 +54,7 @@
     "loadDefault": "Загружены настройки по умолчанию",
     "saveSuccess": "Настройки сохранены",
     "saveFailed": "Не удалось сохранить настройки",
-    "fixBottomNav": "Исправить навбар",
+    "fixBottomNav": "Испр. навбар",
     "webuiLabel": "WebUI"
   },
   "modules": {
