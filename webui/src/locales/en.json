@@ -54,7 +54,8 @@
     "loadDefault": "Loaded default config",
     "saveSuccess": "Configuration saved",
     "saveFailed": "Failed to save configuration",
-    "fixBottomNav": "Fix Bottom Nav"
+    "fixBottomNav": "Fix Bottom Nav",
+    "webuiLabel": "WebUI"
   },
   "modules": {
     "title": "Active Modules",

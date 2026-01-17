@@ -52,7 +52,8 @@
     "loadDefault": "已加载默认配置",
     "saveSuccess": "配置保存成功",
     "saveFailed": "保存配置失败",
-    "fixBottomNav": "修复底部导航遮挡"
+    "fixBottomNav": "修复底部导航遮挡",
+    "webuiLabel": "WebUI"
   },
   "modules": {
     "title": "挂载列表",

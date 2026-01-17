@@ -54,7 +54,8 @@
     "loadDefault": "Загружены настройки по умолчанию",
     "saveSuccess": "Настройки сохранены",
     "saveFailed": "Не удалось сохранить настройки",
-    "fixBottomNav": "Испр. навбар"
+    "fixBottomNav": "Испр. навбар",
+    "webuiLabel": "WebUI"
   },
   "modules": {
     "title": "Активные модули",
