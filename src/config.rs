@@ -27,7 +27,7 @@ impl fmt::Display for Config {
         let toml = toml::to_string_pretty(self)
             .context("Failed to serialize config to toml")
             .unwrap();
-        write!(f, "{}", toml)
+        write!(f, "{toml}")
     }
 }
 
