@@ -147,15 +147,15 @@ export default function ModulesTab() {
                     <Show when={expandedId() === mod.id}>
                       <div class="card-details">
                         <div class="detail-row">
-                          <span class="detail-label">Author</span>
+                          <span class="detail-label">{t("mod.author")}</span>
                           <span class="detail-value">
-                            {mod.author || "Unknown"}
+                            {mod.author || t("common.unknown")}
                           </span>
                         </div>
                         <div class="detail-row description">
-                          <span class="detail-label">Description</span>
+                          <span class="detail-label">{t("mod.description")}</span>
                           <p class="detail-value">
-                            {mod.description || "No description"}
+                            {mod.description || t("common.noDescription")}
                           </p>
                         </div>
 
