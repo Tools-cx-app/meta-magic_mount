@@ -173,7 +173,6 @@ export default function ModulesTab() {
                             </span>
                           </div>
                         </Show>
-                      </div>
                     </Show>
                   </div>
                 )}
