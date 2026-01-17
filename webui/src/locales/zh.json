@@ -69,6 +69,12 @@
     "filterAll": "全部",
     "toggleError": "操作失败"
   },
+  "mod": {
+    "author": "作者",
+    "description": "描述",
+    "unknown": "未知",
+    "noDescription": "没有描述"
+  },
   "info": {
     "title": "关于项目",
     "projectLink": "项目地址",

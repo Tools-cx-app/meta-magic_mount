@@ -71,6 +71,12 @@
     "filterAll": "All",
     "toggleError": "Failed to toggle"
   },
+  "mod": {
+    "author": "Author",
+    "description": "Description",
+    "unknown": "Unknown",
+    "noDescription": "No description"
+  },
   "info": {
     "title": "About",
     "projectLink": "Repository",

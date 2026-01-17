@@ -149,13 +149,13 @@ export default function ModulesTab() {
                         <div class="detail-row">
                           <span class="detail-label">{t("mod.author")}</span>
                           <span class="detail-value">
-                            {mod.author || t("common.unknown")}
+                            {mod.author || t("mod.unknown")}
                           </span>
                         </div>
                         <div class="detail-row description">
                           <span class="detail-label">{t("mod.description")}</span>
                           <p class="detail-value">
-                            {mod.description || t("common.noDescription")}
+                            {mod.description || t("mod.noDescription")}
                           </p>
                         </div>
 
