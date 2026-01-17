@@ -37,7 +37,7 @@
   },
   "config": {
     "title": "Configuration",
-    "umountLabel": "Enable Unmount Modules",
+    "umountLabel": "Enable Unmount",
     "umountOff": "Default",
     "umountOn": "Enabled",
     "tempDir": "Temp Directory",
