@@ -145,20 +145,18 @@ export default function ModulesTab() {
                     </div>
 
                     <Show when={expandedId() === mod.id}>
-                      <div class="card-details">
-                        <div class="detail-row">
-                          <span class="detail-label">{t("mod.author")}</span>
-                          <span class="detail-value">
-                            {mod.author || t("mod.unknown")}
-                          </span>
-                        </div>
-                        <div class="detail-row description">
-                          <span class="detail-label">{t("mod.description")}</span>
-                          <p class="detail-value">
-                            {mod.description || t("mod.noDescription")}
-                          </p>
-                        </div>
-
+                       <div class="detail-row">
+                         <span class="detail-label">{store.L.modules.authorLabel}</span>
+                         <span class="detail-value">
+                           {mod.author || store.L.modules.unknownLabel}
+                         </span>
+                       </div>
+                       <div class="detail-row description">
+                         <span class="detail-label">{store.L.modules.descriptionLabel}</span>
+                         <p class="detail-value">
+                           {mod.description || store.L.modules.noDescriptionLabel}
+                         </p>
+                       </div>
                         <Show when={!mod.is_mounted}>
                           <div class="status-alert">
                             <md-icon class="alert-icon">

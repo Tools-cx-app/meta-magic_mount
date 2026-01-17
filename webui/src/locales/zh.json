@@ -67,13 +67,11 @@
     "searchPlaceholder": "搜索模块...",
     "filterLabel": "筛选:",
     "filterAll": "全部",
-    "toggleError": "操作失败"
-  },
-  "mod": {
-    "author": "作者",
-    "description": "描述",
-    "unknown": "未知",
-    "noDescription": "没有描述"
+    "toggleError": "操作失败",
+    "authorLabel": "作者",
+    "descriptionLabel": "描述",
+    "unknownLabel": "未知",
+    "noDescriptionLabel": "没有描述"
   },
   "info": {
     "title": "关于项目",

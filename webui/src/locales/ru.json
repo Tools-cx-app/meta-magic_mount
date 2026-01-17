@@ -37,7 +37,7 @@
   },
   "config": {
     "title": "Настройки",
-    "umountLabel": "Вкл. размонтирование",
+    "umountLabel": "Вкл. Umount",
     "umountOff": "По умолчанию",
     "umountOn": "Включено",
     "tempDir": "Времен. путь",
@@ -69,13 +69,11 @@
     "searchPlaceholder": "Поиск модулей...",
     "filterLabel": "Фильтр:",
     "filterAll": "Все",
-    "toggleError": "Не удалось переключить"
-  },
-  "mod": {
-    "author": "Автор",
-    "description": "Описание",
-    "unknown": "Неизвестно",
-    "noDescription": "Нет описания"
+    "toggleError": "Не удалось переключить",
+    "authorLabel": "Автор",
+    "descriptionLabel": "Описание",
+    "unknownLabel": "Неизвестно",
+    "noDescriptionLabel": "Нет описания"
   },
   "info": {
     "title": "О нас",

@@ -69,13 +69,11 @@
     "searchPlaceholder": "Search modules...",
     "filterLabel": "Filter:",
     "filterAll": "All",
-    "toggleError": "Failed to toggle"
-  },
-  "mod": {
-    "author": "Author",
-    "description": "Description",
-    "unknown": "Unknown",
-    "noDescription": "No description"
+    "toggleError": "Failed to toggle",
+    "authorLabel": "Author",
+    "descriptionLabel": "Description",
+    "unknownLabel": "Unknown",
+    "noDescriptionLabel": "No description"
   },
   "info": {
     "title": "About",
