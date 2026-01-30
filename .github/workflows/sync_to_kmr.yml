@@ -30,6 +30,7 @@ jobs:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               id: fetch_release
               run: |
+                set -euo pipefail
                 TARGET_TAG="${{ github.event.inputs.tag_name || github.event.release.tag_name }}"
                 echo "Target Tag to sync: $TARGET_TAG"
                 mkdir -p sync-assets
@@ -40,17 +41,12 @@ jobs:
                 fi
                 REL_JSON=$(gh release view "$TARGET_TAG" --json body,name)
                 REL_NAME=$(echo "$REL_JSON" | jq -r '.name')
-                REL_BODY=$(echo "$REL_JSON" | jq -r '.body')
+                echo "$REL_JSON" | jq -r '.body' > /tmp/changelog.md
                 echo "tag_name=$TARGET_TAG" >> $GITHUB_OUTPUT
                 echo "rel_name=$REL_NAME" >> $GITHUB_OUTPUT
-                echo "rel_body<<EOF" >> $GITHUB_OUTPUT
-                echo "$REL_BODY" >> $GITHUB_OUTPUT
-                echo "EOF" >> $GITHUB_OUTPUT
 
-            - name: Upload to KernelSU Modules Repo
-              uses: softprops/action-gh-release@v2
-              with:
-                repository: ${{ env.TARGET_REPO }}
+            - name: Upload to KernelSU Modules Repo (via GH CLI)
+              env:
                 # Required token:
                 # - KERNELSU_MODULES_REPO_PUBLISH_TOKEN
                 # - Must have permission to create releases in the target repository
@@ -58,10 +54,14 @@ jobs:
                 #   * Classic PAT: `repo` scope
                 #   * Fine-grained PAT: `contents: write` permission
                 # - If Fine-grained PAT is not supported, a dedicated bot account with a classic PAT can be used
-                token: ${{ secrets.KERNELSU_MODULES_REPO_PUBLISH_TOKEN }}
-                tag_name: ${{ steps.fetch_release.outputs.tag_name }}
-                name: ${{ steps.fetch_release.outputs.rel_name }}
-                body: ${{ steps.fetch_release.outputs.rel_body }}
-                files: "sync-assets/*"
-                draft: false
-                prerelease: false
+                GH_TOKEN: ${{ secrets.KERNELSU_MODULES_REPO_PUBLISH_TOKEN }}
+                TAG_NAME: ${{ steps.fetch_release.outputs.tag_name }}
+                REL_NAME: ${{ steps.fetch_release.outputs.rel_name }}
+              run: |
+                gh release create "$TAG_NAME" \
+                  --repo "$TARGET_REPO" \
+                  --title "$REL_NAME" \
+                  --notes-file /tmp/changelog.md \
+                  --draft=false \
+                  --prerelease=false \
+                  sync-assets/*
