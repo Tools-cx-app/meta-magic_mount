@@ -1,0 +1,66 @@
+name: Sync Release to KernelSU Modules Repository
+
+permissions:
+  contents: read
+
+env:
+  TARGET_REPO: 'KernelSU-Modules-Repo/magic_mount_rs'
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (For Manual Sync)'
+        required: true
+
+jobs:
+    sync:
+        # Avoid affecting the fork
+        if: github.repository == 'Tools-cx-app/meta-magic_mount'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            - name: Fetch Release
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              id: fetch_release
+              run: |
+                TARGET_TAG="${{ github.event.inputs.tag_name || github.event.release.tag_name }}"
+                echo "Target Tag to sync: $TARGET_TAG"
+                mkdir -p sync-assets
+                gh release download "$TARGET_TAG" --pattern "*.zip" --dir sync-assets/ --skip-existing
+                if [ -z "$(ls -A sync-assets/)" ]; then
+                    echo "Error: No assets downloaded. Check if the tag is correct and has files."
+                    exit 1
+                fi
+                REL_JSON=$(gh release view "$TARGET_TAG" --json body,name)
+                REL_NAME=$(echo "$REL_JSON" | jq -r '.name')
+                REL_BODY=$(echo "$REL_JSON" | jq -r '.body')
+                echo "tag_name=$TARGET_TAG" >> $GITHUB_OUTPUT
+                echo "rel_name=$REL_NAME" >> $GITHUB_OUTPUT
+                echo "rel_body<<EOF" >> $GITHUB_OUTPUT
+                echo "$REL_BODY" >> $GITHUB_OUTPUT
+                echo "EOF" >> $GITHUB_OUTPUT
+
+            - name: Upload to KernelSU Modules Repo
+              uses: softprops/action-gh-release@v2
+              with:
+                repository: ${{ env.TARGET_REPO }}
+                # If the KernelSU module repository does not accept personal access tokens,
+                # create a dedicated GitHub bot account, grant it write permissions to the
+                # target KernelSU module repository, and perform the synchronization using
+                # a classic personal access token generated for that account.
+                # scopes: repo
+                # The token must have `contents: write` permission on the target repository.
+                token: ${{ secrets.KERNELSU_MODULES_REPO_PUBLISH_TOKEN }}
+                tag_name: ${{ steps.fetch_release.outputs.tag_name }}
+                name: ${{ steps.fetch_release.outputs.rel_name }}
+                body: ${{ steps.fetch_release.outputs.rel_body }}
+                files: "sync-assets/*"
+                draft: false
+                prerelease: false
