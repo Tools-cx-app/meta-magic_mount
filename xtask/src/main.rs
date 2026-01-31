@@ -123,7 +123,7 @@ fn build() -> Result<()> {
     build_webui()?;
 
     let mut cargo = cargo_ndk();
-    let args = vec!["build", "-Z", "build-std","-r"];
+    let args = vec!["build", "-Z", "build-std", "-r"];
 
     cargo.args(args);
 

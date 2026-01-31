@@ -119,7 +119,7 @@ impl MagicMount {
             #[cfg(any(target_os = "linux", target_os = "android"))]
             if self.umount {
                 // tell ksu about this mount
-                let _ = send_unmountable(target);
+                send_unmountable(target);
             }
             format!(
                 "mount module file {} -> {}",
@@ -259,7 +259,7 @@ impl MagicMount {
             #[cfg(any(target_os = "linux", target_os = "android"))]
             if self.umount {
                 // tell ksu about this one too
-                let _ = send_unmountable(&self.path);
+                send_unmountable(&self.path);
             }
         }
         Ok(())
